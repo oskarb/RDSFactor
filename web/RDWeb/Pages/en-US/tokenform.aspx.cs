@@ -45,7 +45,9 @@ public partial class SMSToken : System.Web.UI.Page
        
         atts.Add(state);
 
-        String encryptedChallengeResult = Crypto.SHA256(username + SmsToken.Text + radiusSecret);
+        // Careful to use lower case username in challenge encryption to match what server does.
+        String encryptedChallengeResult = Crypto.SHA256(username.ToLower() + SmsToken.Text + radiusSecret);
+
         RADIUSPacket response = client.Authenticate(username, encryptedChallengeResult, atts);
 
         onRadiusResponse(response);
