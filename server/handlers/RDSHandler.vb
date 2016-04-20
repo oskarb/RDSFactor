@@ -264,7 +264,7 @@ Public Class RDSHandler
         attributes.Add(replyMessageAttr)
         attributes.Add(stateAttr)
 
-        mPacket.SendAccessChallange(attributes)
+        mPacket.SendAccessChallenge(attributes)
     End Sub
 
     Private Function Authenticate() As System.DirectoryServices.SearchResult
