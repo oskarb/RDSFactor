@@ -1,5 +1,8 @@
 using System;
 
-public class MissingUser : Exception
+namespace RDSFactor.Exceptions
 {
+    public class MissingUser : Exception
+    {
+    }
 }

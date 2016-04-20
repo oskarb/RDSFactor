@@ -79,11 +79,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="exceptions\MissingLdapField.cs" />
-    <Compile Include="exceptions\MissingNumber.cs" />
-    <Compile Include="exceptions\MissingRadiusSecret.cs" />
-    <Compile Include="exceptions\MissingUser.cs" />
-    <Compile Include="exceptions\SMSSendException.cs" />
+    <Compile Include="Exceptions\MissingLdapField.cs" />
+    <Compile Include="Exceptions\MissingNumber.cs" />
+    <Compile Include="Exceptions\MissingRadiusSecret.cs" />
+    <Compile Include="Exceptions\MissingUser.cs" />
+    <Compile Include="Exceptions\SMSSendException.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -96,7 +96,7 @@
     <Compile Include="RDSFactor.Designer.cs">
       <DependentUpon>RDSFactor.cs</DependentUpon>
     </Compile>
-    <Compile Include="handlers\RDSHandler.cs" />
+    <Compile Include="Handlers\RDSHandler.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -117,7 +117,7 @@
     <Compile Include="IniFile.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="exceptions\MissingEmail.cs" />
+    <Compile Include="Exceptions\MissingEmail.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\radar-radius\RADAR\RADAR.vbproj">

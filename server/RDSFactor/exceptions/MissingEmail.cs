@@ -1,10 +1,13 @@
 ﻿using System;
 
-public class MissingEmail : Exception
+namespace RDSFactor.Exceptions
 {
-    public MissingEmail(string user)
-        : base("User: " + user + " has no email")
+    public class MissingEmail : Exception
     {
+        public MissingEmail(string user)
+            : base("User: " + user + " has no email")
+        {
 
+        }
     }
 }

@@ -1,78 +1,81 @@
 ﻿using System;
-using System.Threading;
 using System.IO.Ports;
+using System.Threading;
 using System.Windows.Forms;
 
-public class SMSModem
+namespace RDSFactor
 {
-    private SerialPort serialPort;
-
-    public SMSModem(string comPort)
+    public class SMSModem
     {
-        serialPort = new SerialPort();
-        serialPort.PortName = comPort;
-        serialPort.BaudRate = 38400;
-        serialPort.Parity = Parity.None;
-        serialPort.DataBits = 8;
-        serialPort.StopBits = StopBits.One;
-        serialPort.Handshake = Handshake.RequestToSend;
-        serialPort.DtrEnable = true;
-        serialPort.RtsEnable = true;
-        serialPort.NewLine = System.Environment.NewLine;
-    }
+        private SerialPort serialPort;
 
-    public bool send(string cellNo, string sms, string SMSC)
-    {
-        string messages = sms;
-        if (serialPort.IsOpen)
+        public SMSModem(string comPort)
         {
-            try
-            {
-                serialPort.WriteLine("AT" + (char) 13);
-                Thread.Sleep(4);
-                serialPort.WriteLine("AT+CSCA=\"" + SMSC + "\"" + (char) 13);
-                Thread.Sleep(30);
-                serialPort.WriteLine(((char) 13).ToString());
-                Thread.Sleep(30);
-                serialPort.WriteLine("AT+CMGS=\"" + cellNo + "\"");
-
-                Thread.Sleep(30);
-                serialPort.WriteLine(messages + (char) 26);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Source);
-            }
-
-            return true;
+            serialPort = new SerialPort();
+            serialPort.PortName = comPort;
+            serialPort.BaudRate = 38400;
+            serialPort.Parity = Parity.None;
+            serialPort.DataBits = 8;
+            serialPort.StopBits = StopBits.One;
+            serialPort.Handshake = Handshake.RequestToSend;
+            serialPort.DtrEnable = true;
+            serialPort.RtsEnable = true;
+            serialPort.NewLine = System.Environment.NewLine;
         }
 
-        return false;
-    }
-
-    public void Opens()
-    {
-        if (!serialPort.IsOpen)
+        public bool send(string cellNo, string sms, string SMSC)
         {
-            try
+            string messages = sms;
+            if (serialPort.IsOpen)
             {
-                // bool ok =this.serialPort.IsOpen //does not work between 2 treads
+                try
+                {
+                    serialPort.WriteLine("AT" + (char) 13);
+                    Thread.Sleep(4);
+                    serialPort.WriteLine("AT+CSCA=\"" + SMSC + "\"" + (char) 13);
+                    Thread.Sleep(30);
+                    serialPort.WriteLine(((char) 13).ToString());
+                    Thread.Sleep(30);
+                    serialPort.WriteLine("AT+CMGS=\"" + cellNo + "\"");
 
-                serialPort.Open();
+                    Thread.Sleep(30);
+                    serialPort.WriteLine(messages + (char) 26);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Source);
+                }
+
+                return true;
             }
-            catch (Exception)
+
+            return false;
+        }
+
+        public void Opens()
+        {
+            if (!serialPort.IsOpen)
             {
-                Thread.Sleep(1000);
-                //wait for the port to get ready if 
-                Opens();
+                try
+                {
+                    // bool ok =this.serialPort.IsOpen //does not work between 2 treads
+
+                    serialPort.Open();
+                }
+                catch (Exception)
+                {
+                    Thread.Sleep(1000);
+                    //wait for the port to get ready if 
+                    Opens();
+                }
             }
         }
-    }
 
 
-    public void Closes()
-    {
-        if (serialPort.IsOpen)
-            serialPort.Close();
+        public void Closes()
+        {
+            if (serialPort.IsOpen)
+                serialPort.Close();
+        }
     }
 }

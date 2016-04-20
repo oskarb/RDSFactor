@@ -6,9 +6,9 @@ using System.Net.Http;
 using System.Net.Mail;
 using System.Reflection;
 using System.ServiceProcess;
-using LogFile;
 using RADAR;
-using RDSFactor.handlers;
+using RDSFactor.Exceptions;
+using RDSFactor.Handlers;
 
 namespace RDSFactor
 {

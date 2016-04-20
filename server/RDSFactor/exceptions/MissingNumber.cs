@@ -1,10 +1,13 @@
 using System;
 
-public class MissingNumber : Exception
+namespace RDSFactor.Exceptions
 {
-    public MissingNumber(string user)
-        : base("User: " + user + " has no mobile number")
+    public class MissingNumber : Exception
     {
+        public MissingNumber(string user)
+            : base("User: " + user + " has no mobile number")
+        {
 
+        }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace LogFile
+namespace RDSFactor
 {
     public class LogWriter
     {

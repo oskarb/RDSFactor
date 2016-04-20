@@ -1,12 +1,12 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.DirectoryServices;
 using System.Linq;
-using RADAR;
 using System.Web.Helpers;
+using RADAR;
+using RDSFactor.Exceptions;
 
-namespace RDSFactor.handlers
+namespace RDSFactor.Handlers
 {
     public class RDSHandler
     {

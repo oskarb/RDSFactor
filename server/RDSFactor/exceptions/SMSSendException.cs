@@ -1,10 +1,13 @@
 using System;
 
-public class SMSSendException : Exception
+namespace RDSFactor.Exceptions
 {
-    public SMSSendException(string message)
-        : base("SMS send error: " + message)
+    public class SMSSendException : Exception
     {
+        public SMSSendException(string message)
+            : base("SMS send error: " + message)
+        {
 
+        }
     }
 }
