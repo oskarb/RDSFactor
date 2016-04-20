@@ -5,7 +5,7 @@
 _pages_old
 obj
 web/RDWeb/Pages/Log/radius_client.txt
-server/bin/*
+server/RDSFactor/bin/*
 
 # Ignore Nuget packages that will be automatically restored.
 /server/packages

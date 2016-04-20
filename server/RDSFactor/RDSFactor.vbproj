@@ -177,7 +177,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\radar-radius\RADAR\RADAR.vbproj">
+    <ProjectReference Include="..\..\radar-radius\RADAR\RADAR.vbproj">
       <Project>{3ab08a4e-c4fa-4571-a5d4-32bba807c31d}</Project>
       <Name>RADAR</Name>
     </ProjectReference>
