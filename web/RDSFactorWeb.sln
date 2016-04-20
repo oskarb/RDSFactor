@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "RADAR", "..\radar-radius\RADAR\RADAR.vbproj", "{3AB08A4E-C4FA-4571-A5D4-32BBA807C31D}"
-EndProject
-Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "RDSFactor", "..\server\RDSFactor\RDSFactor.vbproj", "{04C6C533-9FEA-41B2-B554-A166C7C7FE32}"
 EndProject
 Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Pages", "http://localhost:50001/RDWeb/Pages", "{B31FB884-C42E-417D-AF0D-409FE7D30351}"
 	ProjectSection(WebsiteProperties) = preProject
@@ -29,7 +27,6 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Pages", "http://localhost:5
 		SlnRelativePath = "RDWeb\Pages\"
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
-		{04C6C533-9FEA-41B2-B554-A166C7C7FE32} = {04C6C533-9FEA-41B2-B554-A166C7C7FE32}
 		{3AB08A4E-C4FA-4571-A5D4-32BBA807C31D} = {3AB08A4E-C4FA-4571-A5D4-32BBA807C31D}
 	EndProjectSection
 EndProject
@@ -53,16 +50,6 @@ Global
 		{3AB08A4E-C4FA-4571-A5D4-32BBA807C31D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{3AB08A4E-C4FA-4571-A5D4-32BBA807C31D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{3AB08A4E-C4FA-4571-A5D4-32BBA807C31D}.Release|x86.ActiveCfg = Release|Any CPU
-		{04C6C533-9FEA-41B2-B554-A166C7C7FE32}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{04C6C533-9FEA-41B2-B554-A166C7C7FE32}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{04C6C533-9FEA-41B2-B554-A166C7C7FE32}.Debug|Mixed Platforms.Build.0 = Debug|x86
-		{04C6C533-9FEA-41B2-B554-A166C7C7FE32}.Debug|x86.ActiveCfg = Debug|x86
-		{04C6C533-9FEA-41B2-B554-A166C7C7FE32}.Debug|x86.Build.0 = Debug|x86
-		{04C6C533-9FEA-41B2-B554-A166C7C7FE32}.Release|Any CPU.ActiveCfg = Release|x86
-		{04C6C533-9FEA-41B2-B554-A166C7C7FE32}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{04C6C533-9FEA-41B2-B554-A166C7C7FE32}.Release|Mixed Platforms.Build.0 = Release|x86
-		{04C6C533-9FEA-41B2-B554-A166C7C7FE32}.Release|x86.ActiveCfg = Release|x86
-		{04C6C533-9FEA-41B2-B554-A166C7C7FE32}.Release|x86.Build.0 = Release|x86
 		{B31FB884-C42E-417D-AF0D-409FE7D30351}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B31FB884-C42E-417D-AF0D-409FE7D30351}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B31FB884-C42E-417D-AF0D-409FE7D30351}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
