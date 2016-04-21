@@ -98,7 +98,7 @@ namespace RDSFactor.Handlers
         /// </summary>
         public void ProcessAppLaunchRequest()
         {
-            RDSFactor.LogDebug(mPacket, "AppLaunchRequest");
+            Logger.LogDebug(mPacket, "AppLaunchRequest");
 
             // When the packet is an AppLaunchRequest the password attribute contains the session id!
             var packetSessionId = mPassword;
@@ -108,21 +108,21 @@ namespace RDSFactor.Handlers
 
             if (storedSessionId == null)
             {
-                RDSFactor.LogDebug(mPacket, "User has no session. MUST re-authenticate!");
+                Logger.LogDebug(mPacket, "User has no session. MUST re-authenticate!");
                 mPacket.RejectAccessRequest();
                 return;
             }
 
             if (storedSessionId != packetSessionId)
             {
-                RDSFactor.LogDebug(mPacket, "Stored session id didn't match packet session id!");
+                Logger.LogDebug(mPacket, "Stored session id didn't match packet session id!");
                 mPacket.RejectAccessRequest();
                 return;
             }
 
             if (HasValidSession(mUsername))
             {
-                RDSFactor.LogDebug(mPacket, "Opening window");
+                Logger.LogDebug(mPacket, "Opening window");
                 // Prolong user session
                 sessionTimestamps[mUsername] = DateTime.Now;
                 // Open gateway connection window
@@ -132,7 +132,7 @@ namespace RDSFactor.Handlers
             }
             else
             {
-                RDSFactor.LogDebug(mPacket, "Session timed out -- User MUST re-authenticate");
+                Logger.LogDebug(mPacket, "Session timed out -- User MUST re-authenticate");
                 userSessions.Remove(mUsername);
                 sessionTimestamps.Remove(mUsername);
                 mPacket.RejectAccessRequest();
@@ -177,7 +177,7 @@ namespace RDSFactor.Handlers
         /// </summary>
         public void ProcessGatewayRequest()
         {
-            RDSFactor.LogDebug(mPacket, "Gateway Request");
+            Logger.LogDebug(mPacket, "Gateway Request");
 
             string sessionID;
             userSessions.TryGetValue(mUsername, out sessionID);
@@ -187,7 +187,7 @@ namespace RDSFactor.Handlers
 
             if (sessionID == null || launchTimestamp == default(DateTime))
             {
-                RDSFactor.LogDebug(mPacket, "User has no launch window. User must re-authenticate");
+                Logger.LogDebug(mPacket, "User has no launch window. User must re-authenticate");
                 mPacket.RejectAccessRequest();
             }
 
@@ -203,16 +203,16 @@ namespace RDSFactor.Handlers
 
             if (HasValidLaunchWindow(mUsername))
             {
-                RDSFactor.LogDebug(mPacket, "Opening gateway launch window");
+                Logger.LogDebug(mPacket, "Opening gateway launch window");
                 mPacket.AcceptAccessRequest(attributes);
             }
             else
             {
-                RDSFactor.LogDebug(mPacket, "Gateway launch window has timed out!");
+                Logger.LogDebug(mPacket, "Gateway launch window has timed out!");
                 mPacket.RejectAccessRequest();
             }
 
-            RDSFactor.LogDebug(mPacket, "Removing gateway launch window");
+            Logger.LogDebug(mPacket, "Removing gateway launch window");
             userLaunchTimestamps.Remove(mUsername);
         }
 
@@ -227,7 +227,7 @@ namespace RDSFactor.Handlers
                 return;
             }
 
-            RDSFactor.LogDebug(mPacket, "AccessRequest");
+            Logger.LogDebug(mPacket, "AccessRequest");
             try
             {
                 var ldapResult = Authenticate();
@@ -242,7 +242,7 @@ namespace RDSFactor.Handlers
             }
             catch (Exception ex)
             {
-                RDSFactor.LogDebug(mPacket, "Authentication failed. Sending reject. Error: " + ex.Message);
+                Logger.LogDebug(mPacket, "Authentication failed. Sending reject. Error: " + ex.Message);
                 mPacket.RejectAccessRequest(ex.Message);
             }
         }
@@ -250,7 +250,7 @@ namespace RDSFactor.Handlers
 
         private void Accept()
         {
-            RDSFactor.LogDebug(mPacket, "AcceptAccessRequest");
+            Logger.LogDebug(mPacket, "AcceptAccessRequest");
             var sGUID = Guid.NewGuid().ToString();
 
             userSessions[mUsername] = sGUID;
@@ -279,14 +279,14 @@ namespace RDSFactor.Handlers
             if (encryptedChallengeResults.TryGetValue(mUsername, out localEncryptedResult)
                 && localEncryptedResult == userEncryptedResult)
             {
-                RDSFactor.LogDebug(mPacket, "ChallengeResponse Success");
+                Logger.LogDebug(mPacket, "ChallengeResponse Success");
                 encryptedChallengeResults.Remove(mUsername);
                 authTokens.Remove(mUsername);
                 Accept();
             }
             else
             {
-                RDSFactor.LogDebug(mPacket, "Wrong challenge code!");
+                Logger.LogDebug(mPacket, "Wrong challenge code!");
                 mPacket.RejectAccessRequest();
             }
         }
@@ -298,7 +298,7 @@ namespace RDSFactor.Handlers
             var authToken = System.Guid.NewGuid().ToString();
             var clientIP = mPacket.EndPoint.Address.ToString();
 
-            RDSFactor.LogDebug(mPacket, "Access Challenge Code: " + challengeCode);
+            Logger.LogDebug(mPacket, "Access Challenge Code: " + challengeCode);
 
             string sharedSecret ;
             if (!RDSFactor.secrets.TryGetValue(clientIP, out sharedSecret))
@@ -336,7 +336,7 @@ namespace RDSFactor.Handlers
             var password = mPacket.UserPassword;
             var ldapDomain = RDSFactor.LDAPDomain;
 
-            RDSFactor.LogDebug(mPacket, "Authenticating with LDAP: " + "LDAP://" + ldapDomain);
+            Logger.LogDebug(mPacket, "Authenticating with LDAP: " + "LDAP://" + ldapDomain);
             DirectoryEntry dirEntry = new DirectoryEntry("LDAP://" + ldapDomain, mUsername, password);
 
             var obj = dirEntry.NativeObject;
@@ -361,7 +361,7 @@ namespace RDSFactor.Handlers
 
             if (result == null)
             {
-                RDSFactor.LogDebug(mPacket, "Failed to authenticate with Active Directory");
+                Logger.LogDebug(mPacket, "Failed to authenticate with Active Directory");
                 throw new MissingUser();
             }
 
@@ -379,7 +379,7 @@ namespace RDSFactor.Handlers
 
             if (string.IsNullOrWhiteSpace(mobile))
             {
-                RDSFactor.LogDebug(mPacket, "Unable to find correct phone number for user " + mUsername);
+                Logger.LogDebug(mPacket, "Unable to find correct phone number for user " + mUsername);
                 throw new MissingNumber(mUsername);
             }
 
@@ -395,7 +395,7 @@ namespace RDSFactor.Handlers
             string email = (string) result.Properties[RDSFactor.ADMailField][0];
             if (!email.Contains("@"))
             {
-                RDSFactor.LogDebug(mPacket, "Unable to find correct email for user " + mUsername);
+                Logger.LogDebug(mPacket, "Unable to find correct email for user " + mUsername);
                 throw new MissingEmail(mUsername);
             }
 
@@ -405,7 +405,7 @@ namespace RDSFactor.Handlers
 
         public static void Cleanup()
         {
-            RDSFactor.LogDebug("TimerCleanUp");
+            Logger.LogDebug("TimerCleanUp");
 
             var users = userSessions.Keys.ToList();
             foreach (var username in users)

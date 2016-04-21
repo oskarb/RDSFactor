@@ -27,9 +27,6 @@ namespace RDSFactor
         public static bool EnableSMS = false;
         public static bool EnableEmail = false;
 
-        private static bool DEBUG;
-        private static LogWriter Log = new LogWriter();
-
         private RADIUSServer server;
         private int serverPort = 1812;
         private Dictionary<string, string> userHash = new Dictionary<string, string>();
@@ -67,19 +64,19 @@ namespace RDSFactor
 
         protected override void OnStart(string[] args)
         {
-            Log.filePath = ApplicationPath() + "\\log.txt";
-            Log.WriteLog(
+            Logger.Log.filePath = ApplicationPath() + "\\log.txt";
+            Logger.Log.WriteLog(
                 "---------------------------------------------------------------------------------------------------");
-            LogInfo("Starting Service");
-            LogInfo("Loading Configuration...");
+            Logger.LogInfo("Starting Service");
+            Logger.LogInfo("Loading Configuration...");
             loadConfiguration();
-            LogInfo("Starting Radius listner ports...");
+            Logger.LogInfo("Starting Radius listner ports...");
             StartUpServer();
         }
 
         protected override void OnStop()
         {
-            LogInfo("Stopping Radius listner ports...");
+            Logger.LogInfo("Stopping Radius listner ports...");
         }
 
 
@@ -88,11 +85,11 @@ namespace RDSFactor
             try
             {
                 server = new RADIUSServer(serverPort, ProcessPacket, ref secrets);
-                LogInfo("Starting Radius Server on Port " + serverPort + " ...OK");
+                Logger.LogInfo("Starting Radius Server on Port " + serverPort + " ...OK");
             }
             catch (Exception)
             {
-                LogInfo("Starting Radius Server on Port " + serverPort + "...FAILED");
+                Logger.LogInfo("Starting Radius Server on Port " + serverPort + "...FAILED");
             }
         }
 
@@ -114,38 +111,6 @@ namespace RDSFactor
             // End If
 
             handler.ProcessRequest();
-        }
-
-
-        public static void LogDebug(RADIUSPacket packet, string message)
-        {
-            var from_address = packet.EndPoint.Address.ToString();
-            message = "[" + packet.UserName + " " + from_address + "] " + message;
-            LogDebug(message);
-        }
-
-
-        public static void LogDebug(string message)
-        {
-            message = DateTime.Now + ": DEBUG: " + message;
-            if (DEBUG)
-            {
-                Log.WriteLog(message);
-
-                // Also write to the console if not a service
-                if (Environment.UserInteractive)
-                    Console.WriteLine(message);
-            }
-        }
-
-
-        public static void LogInfo(string message)
-        {
-            message = DateTime.Now + ": INFO: " + message;
-            Log.WriteLog(message);
-            // Also write to the console if not a service
-            if (Environment.UserInteractive)
-                Console.WriteLine(message);
         }
 
 
@@ -176,12 +141,12 @@ namespace RDSFactor
             try
             {
                 RConfig.Load(ApplicationPath() + @"\conf\RDSFactor.ini");
-                DEBUG = Convert.ToBoolean(RConfig.GetKeyValue("RDSFactor", "Debug"));
+                Logger.DEBUG = Convert.ToBoolean(RConfig.GetKeyValue("RDSFactor", "Debug"));
 
                 LDAPDomain = RConfig.GetKeyValue("RDSFactor", "LDAPDomain");
                 if (LDAPDomain.Length == 0)
                 {
-                    LogInfo("ERROR: LDAPDomain can not be empty");
+                    Logger.LogInfo("ERROR: LDAPDomain can not be empty");
                     ConfOk = false;
                 }
 
@@ -202,7 +167,7 @@ namespace RDSFactor
                     ADMobileField = RConfig.GetKeyValue("RDSFactor", "ADField");
                     if (ADMobileField.Length == 0)
                     {
-                        LogInfo("ERROR:  ADField can not be empty");
+                        Logger.LogInfo("ERROR:  ADField can not be empty");
                         ConfOk = false;
                     }
 
@@ -216,7 +181,7 @@ namespace RDSFactor
                                 Provider = RConfig.GetKeyValue("RDSFactor", "Provider");
                                 if (Provider.Length == 0)
                                 {
-                                    LogInfo("ERROR:  Provider can not be empty");
+                                    Logger.LogInfo("ERROR:  Provider can not be empty");
                                     ConfOk = false;
                                 }
                                 break;
@@ -224,19 +189,19 @@ namespace RDSFactor
                                 ComPort = RConfig.GetKeyValue("RDSFactor", "COMPORT");
                                 if (ComPort.Length == 0)
                                 {
-                                    LogInfo("ERROR:  ComPort can not be empty");
+                                    Logger.LogInfo("ERROR:  ComPort can not be empty");
                                     ConfOk = false;
                                 }
                                 SmsC = RConfig.GetKeyValue("RDSFactor", "SMSC");
                                 if (SmsC.Length == 0)
                                 {
-                                    LogInfo(
+                                    Logger.LogInfo(
                                         "ERROR:  SmsC can not be empty. See http://smsclist.com/downloads/default.txt for valid values");
                                     ConfOk = false;
                                 }
                                 break;
                             default:
-                                LogInfo("ERROR:  USELOCALMODEM contain invalid configuration. Correct value are 1 or 0");
+                                Logger.LogInfo("ERROR:  USELOCALMODEM contain invalid configuration. Correct value are 1 or 0");
                                 ConfOk = false;
                                 break;
                         }
@@ -246,19 +211,19 @@ namespace RDSFactor
                 foreach (var client in RConfig.GetSection("clients").Keys)
                 {
                     var address = client.Name;
-                    LogInfo("Adding Shared Secret for: " + address);
+                    Logger.LogInfo("Adding Shared Secret for: " + address);
                     secrets.AddSharedSecret(address, client.Value);
                 }
 
                 if (ConfOk)
-                    LogInfo("Loading Configuration...OK");
+                    Logger.LogInfo("Loading Configuration...OK");
                 else
-                    LogInfo("Loading Configuration...FAILED");
+                    Logger.LogInfo("Loading Configuration...FAILED");
             }
             catch (Exception)
             {
-                LogInfo("ERROR: Missing RDSFactor.ini from startup path or RDSFactor.ini contains invalid configuration");
-                LogInfo("Loading Configuration...FAILED");
+                Logger.LogInfo("ERROR: Missing RDSFactor.ini from startup path or RDSFactor.ini contains invalid configuration");
+                Logger.LogInfo("Loading Configuration...FAILED");
                 Environment.Exit(1);
             }
         }
@@ -283,7 +248,7 @@ namespace RDSFactor
             }
             else
             {
-                LogDebug("Sending OTP: " + passcode + " to: " + number);
+                Logger.LogDebug("Sending OTP: " + passcode + " to: " + number);
 
                 // TODO: Use HttpUtility UrlEncode when we figure out how to add the dll!!!
                 string url = Provider;
@@ -326,16 +291,16 @@ namespace RDSFactor
             try
             {
                 smtp.Send(mail);
-                if (DEBUG)
-                    LogDebug(DateTime.Now + ": Mail sent to: " + email);
+                if (Logger.DEBUG)
+                    Logger.LogDebug(DateTime.Now + ": Mail sent to: " + email);
                 return "SEND";
             }
             catch (InvalidCastException ex)
             {
-                if (DEBUG)
+                if (Logger.DEBUG)
                 {
-                    LogDebug(DateTime.Now + " : Debug: " + ex.Message);
-                    LogDebug(DateTime.Now + " : Unable to send mail to: " + email +
+                    Logger.LogDebug(DateTime.Now + " : Debug: " + ex.Message);
+                    Logger.LogDebug(DateTime.Now + " : Unable to send mail to: " + email +
                              "  ## Check that MAILSERVER and SENDEREMAIL are configured correctly in smscode.conf. Also check that your Webinterface server is allowed to relay through the mail server specified");
                 }
                 return "FAILED";
