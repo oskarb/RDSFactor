@@ -66,10 +66,6 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.ServiceProcess" />
-    <Reference Include="System.Web.Helpers, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\RDSFactor\bin\System.Web.Helpers.dll</HintPath>
-    </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -85,6 +81,7 @@
     <Compile Include="Exceptions\MissingRadiusSecret.cs" />
     <Compile Include="Exceptions\MissingUser.cs" />
     <Compile Include="Exceptions\SMSSendException.cs" />
+    <Compile Include="Handlers\CryptoHelper.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="PassCodeGenerator.cs" />
     <Compile Include="ProjectInstaller.cs">

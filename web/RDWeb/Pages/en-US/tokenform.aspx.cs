@@ -4,9 +4,8 @@ using System.Collections.Generic;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.Web.Helpers;
 using System.Configuration;
-
+using System.Text;
 using RADAR;
 
 public partial class SMSToken : System.Web.UI.Page
@@ -46,7 +45,7 @@ public partial class SMSToken : System.Web.UI.Page
         atts.Add(state);
 
         // Careful to use lower case username in challenge encryption to match what server does.
-        String encryptedChallengeResult = Crypto.SHA256(username.ToLower() + SmsToken.Text + radiusSecret);
+        String encryptedChallengeResult = CryptoHelper.SHA256(username.ToLower() + SmsToken.Text + radiusSecret);
 
         RADIUSPacket response = client.Authenticate(username, encryptedChallengeResult, atts);
 

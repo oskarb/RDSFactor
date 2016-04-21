@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.DirectoryServices;
 using System.Linq;
-using System.Web.Helpers;
 using RADAR;
 using RDSFactor.Exceptions;
 
@@ -305,7 +304,7 @@ namespace RDSFactor.Handlers
                 throw new Exception("No shared secret for client:" + clientIP);
 
             authTokens[mUsername]=authToken;
-            string encryptedChallengeResult = Crypto.SHA256(mUsername + challengeCode + sharedSecret);
+            string encryptedChallengeResult = CryptoHelper.SHA256(mUsername + challengeCode + sharedSecret);
             encryptedChallengeResults[mUsername] = encryptedChallengeResult;
 
             if (mUseSMSFactor)
