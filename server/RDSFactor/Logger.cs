@@ -5,22 +5,32 @@ namespace RDSFactor
 {
     class Logger
     {
-        public static bool DEBUG;
-        public static LogWriter Log = new LogWriter();
+        public static bool Debug;
+        private static LogWriter _log;
+
+        public static void Initialize(string logfilePath)
+        {
+            _log = new LogWriter(logfilePath);
+            _log.WriteLog(
+                "---------------------------------------------------------------------------------------------------");
+        }
+
 
         public static void LogDebug(RADIUSPacket packet, string message)
         {
-            var from_address = packet.EndPoint.Address.ToString();
-            message = "[" + packet.UserName + " " + from_address + "] " + message;
+            var fromAddress = packet.EndPoint.Address.ToString();
+            message = "[" + packet.UserName + " " + fromAddress + "] " + message;
             LogDebug(message);
         }
 
+
         public static void LogDebug(string message)
         {
-            message = DateTime.Now + ": DEBUG: " + message;
-            if (DEBUG)
+            if (Debug)
             {
-                Log.WriteLog(message);
+                message = DateTime.Now + ": DEBUG: " + message;
+
+                _log?.WriteLog(message);
 
                 // Also write to the console if not a service
                 if (Environment.UserInteractive)
@@ -31,7 +41,9 @@ namespace RDSFactor
         public static void LogInfo(string message)
         {
             message = DateTime.Now + ": INFO: " + message;
-            Log.WriteLog(message);
+
+            _log?.WriteLog(message);
+
             // Also write to the console if not a service
             if (Environment.UserInteractive)
                 Console.WriteLine(message);

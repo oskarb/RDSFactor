@@ -45,9 +45,7 @@ namespace RDSFactor
 
         protected override void OnStart(string[] args)
         {
-            Logger.Log.filePath = ApplicationPath() + "\\log.txt";
-            Logger.Log.WriteLog(
-                "---------------------------------------------------------------------------------------------------");
+            Logger.Initialize(ApplicationPath() + "\\log.txt");
             Logger.LogInfo("Starting Service");
             Logger.LogInfo("Loading Configuration...");
             LoadConfiguration();
@@ -103,7 +101,7 @@ namespace RDSFactor
             try
             {
                 rConfig.Load(ApplicationPath() + @"\conf\RDSFactor.ini");
-                Logger.DEBUG = Convert.ToBoolean(rConfig.GetKeyValue("RDSFactor", "Debug"));
+                Logger.Debug = Convert.ToBoolean(rConfig.GetKeyValue("RDSFactor", "Debug"));
 
                 Config.LDAPDomain = rConfig.GetKeyValue("RDSFactor", "LDAPDomain");
                 if (Config.LDAPDomain.Length == 0)

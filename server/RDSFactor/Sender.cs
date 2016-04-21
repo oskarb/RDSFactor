@@ -105,13 +105,13 @@ namespace RDSFactor
             try
             {
                 smtp.Send(mail);
-                if (Logger.DEBUG)
+                if (Logger.Debug)
                     Logger.LogDebug(DateTime.Now + ": Mail sent to: " + email);
                 return "SEND";
             }
             catch (InvalidCastException ex)
             {
-                if (Logger.DEBUG)
+                if (Logger.Debug)
                 {
                     Logger.LogDebug(DateTime.Now + " : Debug: " + ex.Message);
                     Logger.LogDebug(DateTime.Now + " : Unable to send mail to: " + email +
