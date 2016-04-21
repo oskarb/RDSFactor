@@ -13,70 +13,70 @@ namespace RDSFactor.Handlers
         /// User -> Token that proves user has authenticated, but not yet proved
         /// herself with the 2. factor
         /// </summary>
-        private static Dictionary<string, string> authTokens = new Dictionary<string, string>();
+        private static readonly Dictionary<string, string> AuthTokens = new Dictionary<string, string>();
 
-        private static Dictionary<string, string> userSessions = new Dictionary<string, string>();
-        private static Dictionary<string, DateTime> sessionTimestamps = new Dictionary<string, DateTime>();
-        private static Dictionary<string, string> encryptedChallengeResults = new Dictionary<string, string>();
-        private static Dictionary<string, DateTime> userLaunchTimestamps = new Dictionary<string, DateTime>();
+        private static readonly Dictionary<string, string> UserSessions = new Dictionary<string, string>();
+        private static readonly Dictionary<string, DateTime> SessionTimestamps = new Dictionary<string, DateTime>();
+        private static readonly Dictionary<string, string> EncryptedChallengeResults = new Dictionary<string, string>();
+        private static readonly Dictionary<string, DateTime> UserLaunchTimestamps = new Dictionary<string, DateTime>();
 
-        private RADIUSPacket mPacket;
-        private string mUsername;
-        private string mPassword;
+        private readonly RADIUSPacket _packet;
+        private readonly string _username;
+        private readonly string _password;
 
         // RDS specific values 
-        private bool mIsAppLaunchRequest;
-        private bool mIsGatewayRequest;
-        private bool mUseSMSFactor;
-        private bool mUseEmailFactor;
+        private readonly bool _isAppLaunchRequest;
+        private readonly bool _isGatewayRequest;
+        private readonly bool _useSmsFactor;
+        private readonly bool _useEmailFactor;
 
 
         public RDSHandler(RADIUSPacket packet)
         {
-            mPacket = packet;
+            _packet = packet;
 
-            mUsername = mPacket.UserName;
-            mPassword = mPacket.UserPassword;
+            _username = CleanUsername(_packet.UserName);
+            _password = _packet.UserPassword;
+            
 
-            CleanUsername();
-
-            foreach (var atts in mPacket.Attributes.GetAllAttributes(RadiusAttributeType.VendorSpecific))
+            foreach (var atts in _packet.Attributes.GetAllAttributes(RadiusAttributeType.VendorSpecific))
             {
                 string value = atts.GetVendorSpecific().VendorValue;
 
                 switch (value.ToUpper())
                 {
                     case "LAUNCH":
-                        mIsAppLaunchRequest = true;
+                        _isAppLaunchRequest = true;
                         break;
                     case "TSGATEWAY":
-                        mIsGatewayRequest = true;
+                        _isGatewayRequest = true;
                         break;
                     case "SMS":
-                        mUseSMSFactor = true;
+                        _useSmsFactor = true;
                         break;
                     case "EMAIL":
-                        mUseEmailFactor = true;
+                        _useEmailFactor = true;
                         break;
                 }
             }
         }
 
 
-        private void CleanUsername()
+        private static string CleanUsername(string userName)
         {
             // RD Gateway sends EXAMPLE\username
             // RD Web sends example\username or - TODO - even example.com\username
-            if (mUsername != null)
-                mUsername = mUsername.ToLower();
+            userName = userName?.ToLower();
+
+            return userName;
         }
 
 
         public void ProcessRequest()
         {
-            if (mIsAppLaunchRequest)
+            if (_isAppLaunchRequest)
                 ProcessAppLaunchRequest();
-            else if (mIsGatewayRequest)
+            else if (_isGatewayRequest)
                 ProcessGatewayRequest();
             else
                 ProcessAccessRequest();
@@ -97,44 +97,43 @@ namespace RDSFactor.Handlers
         /// </summary>
         public void ProcessAppLaunchRequest()
         {
-            Logger.LogDebug(mPacket, "AppLaunchRequest");
+            Logger.LogDebug(_packet, "AppLaunchRequest");
 
             // When the packet is an AppLaunchRequest the password attribute contains the session id!
-            var packetSessionId = mPassword;
+            var packetSessionId = _password;
 
             string storedSessionId;
-            userSessions.TryGetValue(mUsername, out storedSessionId);
+            UserSessions.TryGetValue(_username, out storedSessionId);
 
             if (storedSessionId == null)
             {
-                Logger.LogDebug(mPacket, "User has no session. MUST re-authenticate!");
-                mPacket.RejectAccessRequest();
+                Logger.LogDebug(_packet, "User has no session. MUST re-authenticate!");
+                _packet.RejectAccessRequest();
                 return;
             }
 
             if (storedSessionId != packetSessionId)
             {
-                Logger.LogDebug(mPacket, "Stored session id didn't match packet session id!");
-                mPacket.RejectAccessRequest();
+                Logger.LogDebug(_packet, "Stored session id didn't match packet session id!");
+                _packet.RejectAccessRequest();
                 return;
             }
 
-            if (HasValidSession(mUsername))
+            if (HasValidSession(_username))
             {
-                Logger.LogDebug(mPacket, "Opening window");
+                Logger.LogDebug(_packet, "Opening window");
                 // Prolong user session
-                sessionTimestamps[mUsername] = DateTime.Now;
+                SessionTimestamps[_username] = DateTime.Now;
                 // Open gateway connection window
-                userLaunchTimestamps[mUsername] = DateTime.Now;
-                mPacket.AcceptAccessRequest();
-                return;
+                UserLaunchTimestamps[_username] = DateTime.Now;
+                _packet.AcceptAccessRequest();
             }
             else
             {
-                Logger.LogDebug(mPacket, "Session timed out -- User MUST re-authenticate");
-                userSessions.Remove(mUsername);
-                sessionTimestamps.Remove(mUsername);
-                mPacket.RejectAccessRequest();
+                Logger.LogDebug(_packet, "Session timed out -- User MUST re-authenticate");
+                UserSessions.Remove(_username);
+                SessionTimestamps.Remove(_username);
+                _packet.RejectAccessRequest();
             }
         }
 
@@ -142,7 +141,7 @@ namespace RDSFactor.Handlers
         public static bool HasValidLaunchWindow(string username)
         {
             DateTime timestamp;
-            if (!userLaunchTimestamps.TryGetValue(username, out timestamp))
+            if (!UserLaunchTimestamps.TryGetValue(username, out timestamp))
                 return false;
 
             var secondsSinceLaunch = (DateTime.Now - timestamp).TotalSeconds;
@@ -152,11 +151,11 @@ namespace RDSFactor.Handlers
 
         public static bool HasValidSession(string username)
         {
-            string sessionID;
-            userSessions.TryGetValue(username, out sessionID);
+            //string sessionId;
+            //UserSessions.TryGetValue(username, out sessionId);
 
             DateTime timestamp;
-            if (!sessionTimestamps.TryGetValue(username, out timestamp))
+            if (!SessionTimestamps.TryGetValue(username, out timestamp))
                 return false;
 
             var minSinceLastActivity = (DateTime.Now - timestamp).TotalMinutes;
@@ -176,49 +175,49 @@ namespace RDSFactor.Handlers
         /// </summary>
         public void ProcessGatewayRequest()
         {
-            Logger.LogDebug(mPacket, "Gateway Request");
+            Logger.LogDebug(_packet, "Gateway Request");
 
-            string sessionID;
-            userSessions.TryGetValue(mUsername, out sessionID);
+            string sessionId;
+            UserSessions.TryGetValue(_username, out sessionId);
 
             DateTime launchTimestamp;
-            userLaunchTimestamps.TryGetValue(mUsername, out launchTimestamp);
+            UserLaunchTimestamps.TryGetValue(_username, out launchTimestamp);
 
-            if (sessionID == null || launchTimestamp == default(DateTime))
+            if (sessionId == null || launchTimestamp == default(DateTime))
             {
-                Logger.LogDebug(mPacket, "User has no launch window. User must re-authenticate");
-                mPacket.RejectAccessRequest();
+                Logger.LogDebug(_packet, "User has no launch window. User must re-authenticate");
+                _packet.RejectAccessRequest();
             }
 
 
             var attributes = new RADIUSAttributes();
 
-            var hasProxyState = mPacket.Attributes.AttributeExists(RadiusAttributeType.ProxyState);
+            var hasProxyState = _packet.Attributes.AttributeExists(RadiusAttributeType.ProxyState);
             if (hasProxyState)
             {
-                var proxyState = mPacket.Attributes.GetFirstAttribute(RadiusAttributeType.ProxyState);
+                var proxyState = _packet.Attributes.GetFirstAttribute(RadiusAttributeType.ProxyState);
                 attributes.Add(proxyState);
             }
 
-            if (HasValidLaunchWindow(mUsername))
+            if (HasValidLaunchWindow(_username))
             {
-                Logger.LogDebug(mPacket, "Opening gateway launch window");
-                mPacket.AcceptAccessRequest(attributes);
+                Logger.LogDebug(_packet, "Opening gateway launch window");
+                _packet.AcceptAccessRequest(attributes);
             }
             else
             {
-                Logger.LogDebug(mPacket, "Gateway launch window has timed out!");
-                mPacket.RejectAccessRequest();
+                Logger.LogDebug(_packet, "Gateway launch window has timed out!");
+                _packet.RejectAccessRequest();
             }
 
-            Logger.LogDebug(mPacket, "Removing gateway launch window");
-            userLaunchTimestamps.Remove(mUsername);
+            Logger.LogDebug(_packet, "Removing gateway launch window");
+            UserLaunchTimestamps.Remove(_username);
         }
 
 
         public void ProcessAccessRequest()
         {
-            var hasState = mPacket.Attributes.AttributeExists(RadiusAttributeType.State);
+            var hasState = _packet.Attributes.AttributeExists(RadiusAttributeType.State);
             if (hasState)
             {
                 // An Access-Request with a state is pr. definition a challenge response.
@@ -226,94 +225,91 @@ namespace RDSFactor.Handlers
                 return;
             }
 
-            Logger.LogDebug(mPacket, "AccessRequest");
+            Logger.LogDebug(_packet, "AccessRequest");
             try
             {
                 var ldapResult = Authenticate();
 
                 if (Config.EnableOTP)
-                {
                     TwoFactorChallenge(ldapResult);
-                    return;
-                }
                 else
                     Accept();
             }
             catch (Exception ex)
             {
-                Logger.LogDebug(mPacket, "Authentication failed. Sending reject. Error: " + ex.Message);
-                mPacket.RejectAccessRequest(ex.Message);
+                Logger.LogDebug(_packet, "Authentication failed. Sending reject. Error: " + ex.Message);
+                _packet.RejectAccessRequest(ex.Message);
             }
         }
 
 
         private void Accept()
         {
-            Logger.LogDebug(mPacket, "AcceptAccessRequest");
-            var sGUID = Guid.NewGuid().ToString();
+            Logger.LogDebug(_packet, "AcceptAccessRequest");
+            var sGuid = Guid.NewGuid().ToString();
 
-            userSessions[mUsername] = sGUID;
-            sessionTimestamps[mUsername] = DateTime.Now;
+            UserSessions[_username] = sGuid;
+            SessionTimestamps[_username] = DateTime.Now;
 
             var attributes = new RADIUSAttributes();
-            var guidAttribute = new RADIUSAttribute(RadiusAttributeType.ReplyMessage, sGUID);
+            var guidAttribute = new RADIUSAttribute(RadiusAttributeType.ReplyMessage, sGuid);
 
             attributes.Add(guidAttribute);
-            mPacket.AcceptAccessRequest(attributes);
+            _packet.AcceptAccessRequest(attributes);
         }
 
 
         private void ProcessChallengeResponse()
         {
-            var authToken = mPacket.Attributes.GetFirstAttribute(RadiusAttributeType.State).ToString();
+            var authToken = _packet.Attributes.GetFirstAttribute(RadiusAttributeType.State).ToString();
             string expectedAuthToken;
 
-            if (!authTokens.TryGetValue(mUsername, out expectedAuthToken) || authToken != expectedAuthToken)
+            if (!AuthTokens.TryGetValue(_username, out expectedAuthToken) || authToken != expectedAuthToken)
                 throw new Exception("User is trying to respond to challenge without valid auth token");
 
             // When the packet is an Challenge-Response the password attr. contains the encrypted result
-            var userEncryptedResult = mPassword;
+            var userEncryptedResult = _password;
 
             string localEncryptedResult;
-            if (encryptedChallengeResults.TryGetValue(mUsername, out localEncryptedResult)
+            if (EncryptedChallengeResults.TryGetValue(_username, out localEncryptedResult)
                 && localEncryptedResult == userEncryptedResult)
             {
-                Logger.LogDebug(mPacket, "ChallengeResponse Success");
-                encryptedChallengeResults.Remove(mUsername);
-                authTokens.Remove(mUsername);
+                Logger.LogDebug(_packet, "ChallengeResponse Success");
+                EncryptedChallengeResults.Remove(_username);
+                AuthTokens.Remove(_username);
                 Accept();
             }
             else
             {
-                Logger.LogDebug(mPacket, "Wrong challenge code!");
-                mPacket.RejectAccessRequest();
+                Logger.LogDebug(_packet, "Wrong challenge code!");
+                _packet.RejectAccessRequest();
             }
         }
 
 
         private void TwoFactorChallenge(SearchResult ldapResult)
         {
-            var challengeCode = PassCodeGenerator.GenerateCode();
-            var authToken = System.Guid.NewGuid().ToString();
-            var clientIP = mPacket.EndPoint.Address.ToString();
+            string challengeCode = PassCodeGenerator.GenerateCode();
+            string authToken = Guid.NewGuid().ToString();
+            string clientIp = _packet.EndPoint.Address.ToString();
 
-            Logger.LogDebug(mPacket, "Access Challenge Code: " + challengeCode);
+            Logger.LogDebug(_packet, "Access Challenge Code: " + challengeCode);
 
             string sharedSecret ;
-            if (!Config.secrets.TryGetValue(clientIP, out sharedSecret))
-                throw new Exception("No shared secret for client:" + clientIP);
+            if (!Config.secrets.TryGetValue(clientIp, out sharedSecret))
+                throw new Exception("No shared secret for client:" + clientIp);
 
-            authTokens[mUsername]=authToken;
-            string encryptedChallengeResult = CryptoHelper.SHA256(mUsername + challengeCode + sharedSecret);
-            encryptedChallengeResults[mUsername] = encryptedChallengeResult;
+            AuthTokens[_username]=authToken;
+            string encryptedChallengeResult = CryptoHelper.SHA256(_username + challengeCode + sharedSecret);
+            EncryptedChallengeResults[_username] = encryptedChallengeResult;
 
-            if (mUseSMSFactor)
+            if (_useSmsFactor)
             {
                 var mobile = LdapGetNumber(ldapResult);
                 Sender.SendSMS(mobile, challengeCode);
             }
 
-            if (mUseEmailFactor)
+            if (_useEmailFactor)
             {
                 var email = LdapGetEmail(ldapResult);
                 Sender.SendEmail(email, challengeCode);
@@ -326,26 +322,26 @@ namespace RDSFactor.Handlers
                 new RADIUSAttribute(RadiusAttributeType.State, authToken)
             };
 
-            mPacket.SendAccessChallenge(attributes);
+            _packet.SendAccessChallenge(attributes);
         }
 
 
         private SearchResult Authenticate()
         {
-            var password = mPacket.UserPassword;
+            var password = _packet.UserPassword;
             var ldapDomain = Config.LDAPDomain;
 
-            Logger.LogDebug(mPacket, "Authenticating with LDAP: " + "LDAP://" + ldapDomain);
-            DirectoryEntry dirEntry = new DirectoryEntry("LDAP://" + ldapDomain, mUsername, password);
+            Logger.LogDebug(_packet, "Authenticating with LDAP: " + "LDAP://" + ldapDomain);
+            DirectoryEntry dirEntry = new DirectoryEntry("LDAP://" + ldapDomain, _username, password);
 
-            var obj = dirEntry.NativeObject;
+            //var obj = dirEntry.NativeObject;
             var search = new DirectorySearcher(dirEntry);
 
-            if (mUsername.Contains("@"))
-                search.Filter = "(userPrincipalName=" + mUsername + ")";
+            if (_username.Contains("@"))
+                search.Filter = "(userPrincipalName=" + _username + ")";
             else
             {
-                var usernameParts = mUsername.Split('\\');
+                var usernameParts = _username.Split('\\');
                 search.Filter = "(SAMAccountName=" + usernameParts.Last() + ")";
             }
 
@@ -360,7 +356,7 @@ namespace RDSFactor.Handlers
 
             if (result == null)
             {
-                Logger.LogDebug(mPacket, "Failed to authenticate with Active Directory");
+                Logger.LogDebug(_packet, "Failed to authenticate with Active Directory");
                 throw new MissingUser();
             }
 
@@ -371,15 +367,15 @@ namespace RDSFactor.Handlers
         private string LdapGetNumber(SearchResult result)
         {
             if (!result.Properties.Contains(Config.ADMobileField))
-                throw new MissingLdapField(Config.ADMobileField, mUsername);
+                throw new MissingLdapField(Config.ADMobileField, _username);
 
             string mobile = (string) result.Properties[Config.ADMobileField][0];
             mobile = mobile.Replace("+", "");
 
             if (string.IsNullOrWhiteSpace(mobile))
             {
-                Logger.LogDebug(mPacket, "Unable to find correct phone number for user " + mUsername);
-                throw new MissingNumber(mUsername);
+                Logger.LogDebug(_packet, "Unable to find correct phone number for user " + _username);
+                throw new MissingNumber(_username);
             }
 
             return mobile;
@@ -389,13 +385,13 @@ namespace RDSFactor.Handlers
         private string LdapGetEmail(SearchResult result)
         {
             if (!result.Properties.Contains(Config.ADMailField))
-                throw new MissingLdapField(Config.ADMailField, mUsername);
+                throw new MissingLdapField(Config.ADMailField, _username);
 
             string email = (string) result.Properties[Config.ADMailField][0];
             if (!email.Contains("@"))
             {
-                Logger.LogDebug(mPacket, "Unable to find correct email for user " + mUsername);
-                throw new MissingEmail(mUsername);
+                Logger.LogDebug(_packet, "Unable to find correct email for user " + _username);
+                throw new MissingEmail(_username);
             }
 
             return email;
@@ -406,16 +402,16 @@ namespace RDSFactor.Handlers
         {
             Logger.LogDebug("TimerCleanUp");
 
-            var users = userSessions.Keys.ToList();
+            var users = UserSessions.Keys.ToList();
             foreach (var username in users)
             {
                 if (!HasValidSession(username))
                 {
-                    userSessions.Remove(username);
-                    sessionTimestamps.Remove(username);
-                    userLaunchTimestamps.Remove(username);
-                    encryptedChallengeResults.Remove(username);
-                    authTokens.Remove(username);
+                    UserSessions.Remove(username);
+                    SessionTimestamps.Remove(username);
+                    UserLaunchTimestamps.Remove(username);
+                    EncryptedChallengeResults.Remove(username);
+                    AuthTokens.Remove(username);
                 }
             }
         }
