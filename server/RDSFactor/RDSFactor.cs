@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.ServiceProcess;
 using RADAR;
@@ -11,15 +10,6 @@ namespace RDSFactor
 {
     partial class RDSFactor : ServiceBase
     {
-        public static string LDAPDomain = "";
-        public static string ADMobileField = "";
-        public static string ADMailField = "";
-        public static bool EnableOTP;
-        public static NASAuthList secrets = new NASAuthList();
-
-
-        public static int SessionTimeOut = 30; // in minutes
-        public static int LaunchTimeOut = 30; // in seconds
         public static int garbageCollectionInterval = 60*60*1000; //' in millis
         public static bool EnableSMS = false;
         public static bool EnableEmail = false;
@@ -75,7 +65,7 @@ namespace RDSFactor
         {
             try
             {
-                server = new RADIUSServer(serverPort, ProcessPacket, ref secrets);
+                server = new RADIUSServer(serverPort, ProcessPacket, ref Config.secrets);
                 Logger.LogInfo("Starting Radius Server on Port " + serverPort + " ...OK");
             }
             catch (Exception)
@@ -115,8 +105,8 @@ namespace RDSFactor
                 rConfig.Load(ApplicationPath() + @"\conf\RDSFactor.ini");
                 Logger.DEBUG = Convert.ToBoolean(rConfig.GetKeyValue("RDSFactor", "Debug"));
 
-                LDAPDomain = rConfig.GetKeyValue("RDSFactor", "LDAPDomain");
-                if (LDAPDomain.Length == 0)
+                Config.LDAPDomain = rConfig.GetKeyValue("RDSFactor", "LDAPDomain");
+                if (Config.LDAPDomain.Length == 0)
                 {
                     Logger.LogInfo("ERROR: LDAPDomain can not be empty");
                     confOk = false;
@@ -124,20 +114,20 @@ namespace RDSFactor
 
                 TSGW = rConfig.GetKeyValue("RDSFactor", "TSGW");
 
-                EnableOTP = Convert.ToBoolean(rConfig.GetKeyValue("RDSFactor", "EnableOTP"));
+                Config.EnableOTP = Convert.ToBoolean(rConfig.GetKeyValue("RDSFactor", "EnableOTP"));
 
-                if (EnableOTP)
+                if (Config.EnableOTP)
                 {
                     if (rConfig.GetKeyValue("RDSFactor", "EnableEmail") == "1")
                     {
                         EnableEmail = true;
                         Sender.SenderEmail = rConfig.GetKeyValue("RDSFactor", "SenderEmail");
                         Sender.MailServer = rConfig.GetKeyValue("RDSFactor", "MailServer");
-                        ADMailField = rConfig.GetKeyValue("RDSFactor", "ADMailField");
+                        Config.ADMailField = rConfig.GetKeyValue("RDSFactor", "ADMailField");
                     }
 
-                    ADMobileField = rConfig.GetKeyValue("RDSFactor", "ADField");
-                    if (ADMobileField.Length == 0)
+                    Config.ADMobileField = rConfig.GetKeyValue("RDSFactor", "ADField");
+                    if (Config.ADMobileField.Length == 0)
                     {
                         Logger.LogInfo("ERROR:  ADField can not be empty");
                         confOk = false;
@@ -184,7 +174,7 @@ namespace RDSFactor
                 {
                     var address = client.Name;
                     Logger.LogInfo("Adding Shared Secret for: " + address);
-                    secrets.AddSharedSecret(address, client.Value);
+                    Config.secrets.AddSharedSecret(address, client.Value);
                 }
 
                 if (confOk)

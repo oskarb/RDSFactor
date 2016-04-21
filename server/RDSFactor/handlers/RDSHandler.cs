@@ -147,7 +147,7 @@ namespace RDSFactor.Handlers
                 return false;
 
             var secondsSinceLaunch = (DateTime.Now - timestamp).TotalSeconds;
-            return secondsSinceLaunch < RDSFactor.LaunchTimeOut;
+            return secondsSinceLaunch < Config.LaunchTimeOut;
         }
 
 
@@ -161,7 +161,7 @@ namespace RDSFactor.Handlers
                 return false;
 
             var minSinceLastActivity = (DateTime.Now - timestamp).TotalMinutes;
-            return minSinceLastActivity < RDSFactor.SessionTimeOut;
+            return minSinceLastActivity < Config.SessionTimeOut;
         }
 
 
@@ -232,7 +232,7 @@ namespace RDSFactor.Handlers
             {
                 var ldapResult = Authenticate();
 
-                if (RDSFactor.EnableOTP)
+                if (Config.EnableOTP)
                 {
                     TwoFactorChallenge(ldapResult);
                     return;
@@ -301,7 +301,7 @@ namespace RDSFactor.Handlers
             Logger.LogDebug(mPacket, "Access Challenge Code: " + challengeCode);
 
             string sharedSecret ;
-            if (!RDSFactor.secrets.TryGetValue(clientIP, out sharedSecret))
+            if (!Config.secrets.TryGetValue(clientIP, out sharedSecret))
                 throw new Exception("No shared secret for client:" + clientIP);
 
             authTokens[mUsername]=authToken;
@@ -334,7 +334,7 @@ namespace RDSFactor.Handlers
         private SearchResult Authenticate()
         {
             var password = mPacket.UserPassword;
-            var ldapDomain = RDSFactor.LDAPDomain;
+            var ldapDomain = Config.LDAPDomain;
 
             Logger.LogDebug(mPacket, "Authenticating with LDAP: " + "LDAP://" + ldapDomain);
             DirectoryEntry dirEntry = new DirectoryEntry("LDAP://" + ldapDomain, mUsername, password);
@@ -351,10 +351,10 @@ namespace RDSFactor.Handlers
             }
 
             search.PropertiesToLoad.Add("distinguishedName");
-            if (RDSFactor.EnableOTP)
+            if (Config.EnableOTP)
             {
-                search.PropertiesToLoad.Add(RDSFactor.ADMobileField);
-                search.PropertiesToLoad.Add(RDSFactor.ADMailField);
+                search.PropertiesToLoad.Add(Config.ADMobileField);
+                search.PropertiesToLoad.Add(Config.ADMailField);
             }
 
             var result = search.FindOne();
@@ -371,10 +371,10 @@ namespace RDSFactor.Handlers
 
         private string LdapGetNumber(SearchResult result)
         {
-            if (!result.Properties.Contains(RDSFactor.ADMobileField))
-                throw new MissingLdapField(RDSFactor.ADMobileField, mUsername);
+            if (!result.Properties.Contains(Config.ADMobileField))
+                throw new MissingLdapField(Config.ADMobileField, mUsername);
 
-            string mobile = (string) result.Properties[RDSFactor.ADMobileField][0];
+            string mobile = (string) result.Properties[Config.ADMobileField][0];
             mobile = mobile.Replace("+", "");
 
             if (string.IsNullOrWhiteSpace(mobile))
@@ -389,10 +389,10 @@ namespace RDSFactor.Handlers
 
         private string LdapGetEmail(SearchResult result)
         {
-            if (!result.Properties.Contains(RDSFactor.ADMailField))
-                throw new MissingLdapField(RDSFactor.ADMailField, mUsername);
+            if (!result.Properties.Contains(Config.ADMailField))
+                throw new MissingLdapField(Config.ADMailField, mUsername);
 
-            string email = (string) result.Properties[RDSFactor.ADMailField][0];
+            string email = (string) result.Properties[Config.ADMailField][0];
             if (!email.Contains("@"))
             {
                 Logger.LogDebug(mPacket, "Unable to find correct email for user " + mUsername);
