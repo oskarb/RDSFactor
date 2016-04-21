@@ -294,7 +294,7 @@ namespace RDSFactor.Handlers
 
         private void TwoFactorChallenge(SearchResult ldapResult)
         {
-            var challengeCode = RDSFactor.GenerateCode();
+            var challengeCode = PassCodeGenerator.GenerateCode();
             var authToken = System.Guid.NewGuid().ToString();
             var clientIP = mPacket.EndPoint.Address.ToString();
 

@@ -85,6 +85,7 @@
     <Compile Include="Exceptions\MissingUser.cs" />
     <Compile Include="Exceptions\SMSSendException.cs" />
     <Compile Include="Logger.cs" />
+    <Compile Include="PassCodeGenerator.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
