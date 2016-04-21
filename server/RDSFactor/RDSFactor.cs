@@ -2,12 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Mail;
 using System.Reflection;
 using System.ServiceProcess;
 using RADAR;
-using RDSFactor.Exceptions;
 using RDSFactor.Handlers;
 
 namespace RDSFactor
@@ -33,12 +30,6 @@ namespace RDSFactor
         private Dictionary<string, string> packetHash = new Dictionary<string, string>();
         private Dictionary<string, string> clientHash = new Dictionary<string, string>();
 
-        private static string Provider = "";
-        private static int ModemType = 0;
-        private static string ComPort = "";
-        private static string SmsC = "";
-        private static string MailServer = "";
-        private static string SenderEmail = "";
         private string TSGW = "";
 
 
@@ -159,8 +150,8 @@ namespace RDSFactor
                     if (rConfig.GetKeyValue("RDSFactor", "EnableEmail") == "1")
                     {
                         EnableEmail = true;
-                        SenderEmail = rConfig.GetKeyValue("RDSFactor", "SenderEmail");
-                        MailServer = rConfig.GetKeyValue("RDSFactor", "MailServer");
+                        Sender.SenderEmail = rConfig.GetKeyValue("RDSFactor", "SenderEmail");
+                        Sender.MailServer = rConfig.GetKeyValue("RDSFactor", "MailServer");
                         ADMailField = rConfig.GetKeyValue("RDSFactor", "ADMailField");
                     }
 
@@ -174,26 +165,26 @@ namespace RDSFactor
                     if (rConfig.GetKeyValue("RDSFactor", "EnableSMS") == "1")
                     {
                         EnableSMS = true;
-                        ModemType = Convert.ToInt32(rConfig.GetKeyValue("RDSFactor", "USELOCALMODEM"));
-                        switch (ModemType)
+                        Sender.ModemType = Convert.ToInt32(rConfig.GetKeyValue("RDSFactor", "USELOCALMODEM"));
+                        switch (Sender.ModemType)
                         {
                             case 0:
-                                Provider = rConfig.GetKeyValue("RDSFactor", "Provider");
-                                if (Provider.Length == 0)
+                                Sender.Provider = rConfig.GetKeyValue("RDSFactor", "Provider");
+                                if (Sender.Provider.Length == 0)
                                 {
                                     Logger.LogInfo("ERROR:  Provider can not be empty");
                                     confOk = false;
                                 }
                                 break;
                             case 1:
-                                ComPort = rConfig.GetKeyValue("RDSFactor", "COMPORT");
-                                if (ComPort.Length == 0)
+                                Sender.ComPort = rConfig.GetKeyValue("RDSFactor", "COMPORT");
+                                if (Sender.ComPort.Length == 0)
                                 {
                                     Logger.LogInfo("ERROR:  ComPort can not be empty");
                                     confOk = false;
                                 }
-                                SmsC = rConfig.GetKeyValue("RDSFactor", "SMSC");
-                                if (SmsC.Length == 0)
+                                Sender.SmsC = rConfig.GetKeyValue("RDSFactor", "SMSC");
+                                if (Sender.SmsC.Length == 0)
                                 {
                                     Logger.LogInfo(
                                         "ERROR:  SmsC can not be empty. See http://smsclist.com/downloads/default.txt for valid values");
@@ -232,79 +223,6 @@ namespace RDSFactor
         public string ApplicationPath()
         {
             return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        }
-
-
-        public static void SendSMS(string number, string passcode)
-        {
-            // test if using online sms provider or local modem
-            if (ModemType == 1)
-            {
-                // local modem
-                var modem = new SMSModem(ComPort);
-                modem.Opens();
-                modem.send(number, passcode, SmsC);
-                modem.Closes();
-            }
-            else
-            {
-                Logger.LogDebug("Sending OTP: " + passcode + " to: " + number);
-
-                // TODO: Use HttpUtility UrlEncode when we figure out how to add the dll!!!
-                string url = Provider;
-                url = url.Replace("***TEXTMESSAGE***", passcode);
-                url = url.Replace("***NUMBER***", number);
-
-                var client = new HttpClient();
-
-                HttpResponseMessage response = client.GetAsync(url).Result;
-                string content = response.Content.ReadAsStringAsync().Result;
-
-                if (response.IsSuccessStatusCode)
-                {
-                    if (url.IndexOf("cpsms.dk") != -1)
-                    {
-                        // NOTE: Yes cpsms does indeed return HTTP 200 on errors!?!
-                        if (content.IndexOf("error") != -1)
-                            throw new SMSSendException(content);
-                    }
-                }
-                else
-                {
-                    throw new SMSSendException(content);
-                }
-            }
-        }
-
-
-        public static string SendEmail(string email, string passcode)
-        {
-            var mail = new MailMessage();
-            mail.To.Add(email);
-            mail.From = new MailAddress(SenderEmail);
-            mail.Subject = "Token: " + passcode;
-            mail.Body = "Subject contains the token code to login to the site";
-            mail.IsBodyHtml = false;
-
-            var smtp = new SmtpClient(MailServer);
-
-            try
-            {
-                smtp.Send(mail);
-                if (Logger.DEBUG)
-                    Logger.LogDebug(DateTime.Now + ": Mail sent to: " + email);
-                return "SEND";
-            }
-            catch (InvalidCastException ex)
-            {
-                if (Logger.DEBUG)
-                {
-                    Logger.LogDebug(DateTime.Now + " : Debug: " + ex.Message);
-                    Logger.LogDebug(DateTime.Now + " : Unable to send mail to: " + email +
-                             "  ## Check that MAILSERVER and SENDEREMAIL are configured correctly in smscode.conf. Also check that your Webinterface server is allowed to relay through the mail server specified");
-                }
-                return "FAILED";
-            }
         }
 
 

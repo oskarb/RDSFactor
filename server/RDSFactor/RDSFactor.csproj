@@ -109,6 +109,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Sender.cs" />
     <Compile Include="SMSModem.cs" />
   </ItemGroup>
   <ItemGroup>

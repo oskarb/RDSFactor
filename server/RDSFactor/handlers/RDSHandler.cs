@@ -311,13 +311,13 @@ namespace RDSFactor.Handlers
             if (mUseSMSFactor)
             {
                 var mobile = LdapGetNumber(ldapResult);
-                RDSFactor.SendSMS(mobile, challengeCode);
+                Sender.SendSMS(mobile, challengeCode);
             }
 
             if (mUseEmailFactor)
             {
                 var email = LdapGetEmail(ldapResult);
-                RDSFactor.SendEmail(email, challengeCode);
+                Sender.SendEmail(email, challengeCode);
             }
 
 
