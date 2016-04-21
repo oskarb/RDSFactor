@@ -115,7 +115,7 @@
     <Compile Include="SMSModem.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Log.cs" />
+    <Compile Include="LogWriter.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IniFile.cs" />
