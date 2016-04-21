@@ -69,7 +69,7 @@ namespace RDSFactor
                 "---------------------------------------------------------------------------------------------------");
             Logger.LogInfo("Starting Service");
             Logger.LogInfo("Loading Configuration...");
-            loadConfiguration();
+            LoadConfiguration();
             Logger.LogInfo("Starting Radius listner ports...");
             StartUpServer();
         }
@@ -133,89 +133,89 @@ namespace RDSFactor
         }
 
 
-        public void loadConfiguration()
+        private void LoadConfiguration()
         {
-            bool ConfOk = true;
-            IniFile RConfig = new IniFile();
+            bool confOk = true;
+            IniFile rConfig = new IniFile();
 
             try
             {
-                RConfig.Load(ApplicationPath() + @"\conf\RDSFactor.ini");
-                Logger.DEBUG = Convert.ToBoolean(RConfig.GetKeyValue("RDSFactor", "Debug"));
+                rConfig.Load(ApplicationPath() + @"\conf\RDSFactor.ini");
+                Logger.DEBUG = Convert.ToBoolean(rConfig.GetKeyValue("RDSFactor", "Debug"));
 
-                LDAPDomain = RConfig.GetKeyValue("RDSFactor", "LDAPDomain");
+                LDAPDomain = rConfig.GetKeyValue("RDSFactor", "LDAPDomain");
                 if (LDAPDomain.Length == 0)
                 {
                     Logger.LogInfo("ERROR: LDAPDomain can not be empty");
-                    ConfOk = false;
+                    confOk = false;
                 }
 
-                TSGW = RConfig.GetKeyValue("RDSFactor", "TSGW");
+                TSGW = rConfig.GetKeyValue("RDSFactor", "TSGW");
 
-                EnableOTP = Convert.ToBoolean(RConfig.GetKeyValue("RDSFactor", "EnableOTP"));
+                EnableOTP = Convert.ToBoolean(rConfig.GetKeyValue("RDSFactor", "EnableOTP"));
 
                 if (EnableOTP)
                 {
-                    if (RConfig.GetKeyValue("RDSFactor", "EnableEmail") == "1")
+                    if (rConfig.GetKeyValue("RDSFactor", "EnableEmail") == "1")
                     {
                         EnableEmail = true;
-                        SenderEmail = RConfig.GetKeyValue("RDSFactor", "SenderEmail");
-                        MailServer = RConfig.GetKeyValue("RDSFactor", "MailServer");
-                        ADMailField = RConfig.GetKeyValue("RDSFactor", "ADMailField");
+                        SenderEmail = rConfig.GetKeyValue("RDSFactor", "SenderEmail");
+                        MailServer = rConfig.GetKeyValue("RDSFactor", "MailServer");
+                        ADMailField = rConfig.GetKeyValue("RDSFactor", "ADMailField");
                     }
 
-                    ADMobileField = RConfig.GetKeyValue("RDSFactor", "ADField");
+                    ADMobileField = rConfig.GetKeyValue("RDSFactor", "ADField");
                     if (ADMobileField.Length == 0)
                     {
                         Logger.LogInfo("ERROR:  ADField can not be empty");
-                        ConfOk = false;
+                        confOk = false;
                     }
 
-                    if (RConfig.GetKeyValue("RDSFactor", "EnableSMS") == "1")
+                    if (rConfig.GetKeyValue("RDSFactor", "EnableSMS") == "1")
                     {
                         EnableSMS = true;
-                        ModemType = Convert.ToInt32(RConfig.GetKeyValue("RDSFactor", "USELOCALMODEM"));
+                        ModemType = Convert.ToInt32(rConfig.GetKeyValue("RDSFactor", "USELOCALMODEM"));
                         switch (ModemType)
                         {
                             case 0:
-                                Provider = RConfig.GetKeyValue("RDSFactor", "Provider");
+                                Provider = rConfig.GetKeyValue("RDSFactor", "Provider");
                                 if (Provider.Length == 0)
                                 {
                                     Logger.LogInfo("ERROR:  Provider can not be empty");
-                                    ConfOk = false;
+                                    confOk = false;
                                 }
                                 break;
                             case 1:
-                                ComPort = RConfig.GetKeyValue("RDSFactor", "COMPORT");
+                                ComPort = rConfig.GetKeyValue("RDSFactor", "COMPORT");
                                 if (ComPort.Length == 0)
                                 {
                                     Logger.LogInfo("ERROR:  ComPort can not be empty");
-                                    ConfOk = false;
+                                    confOk = false;
                                 }
-                                SmsC = RConfig.GetKeyValue("RDSFactor", "SMSC");
+                                SmsC = rConfig.GetKeyValue("RDSFactor", "SMSC");
                                 if (SmsC.Length == 0)
                                 {
                                     Logger.LogInfo(
                                         "ERROR:  SmsC can not be empty. See http://smsclist.com/downloads/default.txt for valid values");
-                                    ConfOk = false;
+                                    confOk = false;
                                 }
                                 break;
                             default:
                                 Logger.LogInfo("ERROR:  USELOCALMODEM contain invalid configuration. Correct value are 1 or 0");
-                                ConfOk = false;
+                                confOk = false;
                                 break;
                         }
                     }
                 }
 
-                foreach (var client in RConfig.GetSection("clients").Keys)
+                foreach (var client in rConfig.GetSection("clients").Keys)
                 {
                     var address = client.Name;
                     Logger.LogInfo("Adding Shared Secret for: " + address);
                     secrets.AddSharedSecret(address, client.Value);
                 }
 
-                if (ConfOk)
+                if (confOk)
                     Logger.LogInfo("Loading Configuration...OK");
                 else
                     Logger.LogInfo("Loading Configuration...FAILED");
