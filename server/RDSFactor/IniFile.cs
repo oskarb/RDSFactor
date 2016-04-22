@@ -211,6 +211,26 @@ namespace RDSFactor
         }
 
 
+        public T GetKeyValue<T>(string sSection, string sKey) where T : struct
+        {
+            string strVal = GetKeyValue(sSection, sKey);
+
+            if (typeof(T) == typeof(bool))
+            {
+                if (strVal == "0" || strVal.ToLower() == "false")
+                    return (T) (object) false;
+                if (strVal == "1" || strVal.ToLower() == "true")
+                    return (T) (object) true;
+                throw new FormatException($"Parameter [{sSection}]{sKey} must be a boolean value (0, false, 1, true).");
+            }
+
+            if (typeof(T) == typeof(int))
+                return (T) (object) Convert.ToInt32(strVal);
+
+            throw new InvalidOperationException($"Unhandled type {typeof(T)}.");
+        }
+
+
         /// <summary>
         /// Sets a KeyValuePair in a certain section
         /// </summary>

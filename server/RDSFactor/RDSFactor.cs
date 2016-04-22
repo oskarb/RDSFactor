@@ -101,7 +101,7 @@ namespace RDSFactor
             try
             {
                 rConfig.Load(ApplicationPath() + @"\conf\RDSFactor.ini");
-                Logger.Debug = Convert.ToBoolean(rConfig.GetKeyValue("RDSFactor", "Debug"));
+                Logger.Debug = rConfig.GetKeyValue<bool>("RDSFactor", "Debug");
 
                 Config.LDAPDomain = rConfig.GetKeyValue("RDSFactor", "LDAPDomain");
                 if (Config.LDAPDomain.Length == 0)
@@ -112,11 +112,11 @@ namespace RDSFactor
 
                 TSGW = rConfig.GetKeyValue("RDSFactor", "TSGW");
 
-                Config.EnableOTP = Convert.ToBoolean(rConfig.GetKeyValue("RDSFactor", "EnableOTP"));
+                Config.EnableOTP = rConfig.GetKeyValue<bool>("RDSFactor", "EnableOTP");
 
                 if (Config.EnableOTP)
                 {
-                    if (rConfig.GetKeyValue("RDSFactor", "EnableEmail") == "1")
+                    if (rConfig.GetKeyValue<bool>("RDSFactor", "EnableEmail"))
                     {
                         EnableEmail = true;
                         Sender.SenderEmail = rConfig.GetKeyValue("RDSFactor", "SenderEmail");
@@ -131,11 +131,11 @@ namespace RDSFactor
                         confOk = false;
                     }
 
-                    if (rConfig.GetKeyValue("RDSFactor", "EnableSMS") == "1")
+                    if (rConfig.GetKeyValue<bool>("RDSFactor", "EnableSMS"))
                     {
                         EnableSMS = true;
                         Sender.ModemType =
-                            (ModemType) Convert.ToInt32(rConfig.GetKeyValue("RDSFactor", "USELOCALMODEM"));
+                            (ModemType) rConfig.GetKeyValue<int>("RDSFactor", "USELOCALMODEM");
                         switch (Sender.ModemType)
                         {
                             case ModemType.Internet:
@@ -181,8 +181,9 @@ namespace RDSFactor
                 else
                     Logger.LogInfo("Loading Configuration...FAILED");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.LogInfo("ERROR loading configuration: " + ex);
                 Logger.LogInfo("ERROR: Missing RDSFactor.ini from startup path or RDSFactor.ini contains invalid configuration");
                 Logger.LogInfo("Loading Configuration...FAILED");
                 Environment.Exit(1);
