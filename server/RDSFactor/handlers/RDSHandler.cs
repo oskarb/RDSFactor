@@ -296,7 +296,7 @@ namespace RDSFactor.Handlers
             Logger.LogDebug(_packet, "Access Challenge Code: " + challengeCode);
 
             string sharedSecret ;
-            if (!Config.secrets.TryGetValue(clientIp, out sharedSecret))
+            if (!Config.Secrets.TryGetValue(clientIp, out sharedSecret))
                 throw new Exception("No shared secret for client:" + clientIp);
 
             AuthTokens[_username]=authToken;

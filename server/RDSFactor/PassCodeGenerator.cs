@@ -7,7 +7,7 @@ namespace RDSFactor
     {
         public static string GenerateCode()
         {
-            Random ordRand = new System.Random();
+            Random ordRand = new Random();
             int[] temp = new int[6];
 
             for (int i = 0; i < temp.Length; i++)

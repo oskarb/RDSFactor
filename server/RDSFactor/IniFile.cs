@@ -18,7 +18,7 @@ namespace RDSFactor
     public class IniFile
     {
         /// List of IniSection objects keeps track of all the sections in the INI file
-        private Dictionary<string, IniSection> m_sections;
+        private readonly Dictionary<string, IniSection> m_sections;
 
         public IniFile()
         {
@@ -48,34 +48,34 @@ namespace RDSFactor
                 string line = oReader.ReadLine();
                 if (line != string.Empty)
                 {
-                    Match m = null;
+                    Match m;
                     if (regexcomment.Match(line).Success)
                     {
                         m = regexcomment.Match(line);
-                        Trace.WriteLine(String.Format("Skipping Comment: {0}", m.Groups[0].Value));
+                        Trace.WriteLine(string.Format("Skipping Comment: {0}", m.Groups[0].Value));
                     }
                     else if (regexsection.Match(line).Success)
                     {
                         m = regexsection.Match(line);
-                        Trace.WriteLine(String.Format("Adding section [{0}]", m.Groups[1].Value));
+                        Trace.WriteLine(string.Format("Adding section [{0}]", m.Groups[1].Value));
                         tempsection = AddSection(m.Groups[1].Value);
                     }
                     else if (regexkey.Match(line).Success && tempsection != null)
                     {
                         m = regexkey.Match(line);
-                        Trace.WriteLine(String.Format("Adding Key [{0}]=[{1}]", m.Groups[1].Value, m.Groups[2].Value));
+                        Trace.WriteLine(string.Format("Adding Key [{0}]=[{1}]", m.Groups[1].Value, m.Groups[2].Value));
                         tempsection.AddKey(m.Groups[1].Value).Value = m.Groups[2].Value;
                     }
                     else if (tempsection != null)
                     {
                         //  Handle Key without value
-                        Trace.WriteLine(String.Format("Adding Key [{0}]", line));
+                        Trace.WriteLine(string.Format("Adding Key [{0}]", line));
                         tempsection.AddKey(line);
                     }
                     else
                     {
                         //  This should not occur unless the tempsection is not created yet...
-                        Trace.WriteLine(String.Format("Skipping unknown type of data: {0}", line));
+                        Trace.WriteLine(string.Format("Skipping unknown type of data: {0}", line));
                     }
                 }
             }
@@ -92,19 +92,19 @@ namespace RDSFactor
             StreamWriter oWriter = new StreamWriter(sFileName, false);
             foreach (IniSection s in Sections)
             {
-                Trace.WriteLine(String.Format("Writing Section: [{0}]", s.Name));
-                oWriter.WriteLine(String.Format("[{0}]", s.Name));
+                Trace.WriteLine(string.Format("Writing Section: [{0}]", s.Name));
+                oWriter.WriteLine("[{0}]", s.Name);
                 foreach (IniSection.IniKey k in s.Keys)
                 {
                     if (k.Value != string.Empty)
                     {
                         Trace.WriteLine(String.Format("Writing Key: {0}={1}", k.Name, k.Value));
-                        oWriter.WriteLine(String.Format("{0}={1}", k.Name, k.Value));
+                        oWriter.WriteLine("{0}={1}", k.Name, k.Value);
                     }
                     else
                     {
                         Trace.WriteLine(String.Format("Writing Key: {0}", k.Name));
-                        oWriter.WriteLine(String.Format("{0}", k.Name));
+                        oWriter.WriteLine("{0}", k.Name);
                     }
                 }
             }
@@ -126,17 +126,15 @@ namespace RDSFactor
         /// </summary>
         public IniSection AddSection(string sSection)
         {
-            IniSection s = null;
             sSection = sSection.Trim();
-            if (m_sections.ContainsKey(sSection))
-            {
-                s = m_sections[sSection];
-            }
-            else
+
+            IniSection s;
+            if (!m_sections.TryGetValue(sSection, out s))
             {
                 s = new IniSection(this, sSection);
                 m_sections[sSection] = s;
             }
+
             return s;
         }
 
@@ -191,7 +189,7 @@ namespace RDSFactor
             sSection = sSection.Trim();
 
             if (m_sections.ContainsKey(sSection))
-                return (IniSection) m_sections[sSection];
+                return m_sections[sSection];
 
             return null;
         }
@@ -209,7 +207,7 @@ namespace RDSFactor
                 if (k != null)
                     return k.Value;
             }
-            return System.String.Empty;
+            return string.Empty;
         }
 
 
@@ -278,11 +276,11 @@ namespace RDSFactor
         public class IniSection
         {
             //  IniFile IniFile object instance
-            private IniFile m_pIniFile;
+            private readonly IniFile m_pIniFile;
             //  Name of the section
             private string m_sSection;
             //  List of IniKeys in the section
-            private Dictionary<string, IniKey> m_keys;
+            private readonly Dictionary<string, IniKey> m_keys;
 
 
             public IniSection(IniFile parent, string sSection)
@@ -311,7 +309,7 @@ namespace RDSFactor
             public IniKey AddKey(string sKey)
             {
                 sKey = sKey.Trim();
-                IniSection.IniKey k = null;
+                IniKey k = null;
                 if (sKey.Length != 0)
                 {
                     if (m_keys.ContainsKey(sKey))
@@ -320,7 +318,7 @@ namespace RDSFactor
                     }
                     else
                     {
-                        k = new IniSection.IniKey(this, sKey);
+                        k = new IniKey(this, sKey);
                         m_keys[sKey] = k;
                     }
                 }
@@ -340,13 +338,13 @@ namespace RDSFactor
             /// <summary>
             /// Removes a single key by IniKey object
             /// </summary>
-            public bool RemoveKey(IniKey Key)
+            public bool RemoveKey(IniKey key)
             {
-                if (Key != null)
+                if (key != null)
                 {
                     try
                     {
-                        m_keys.Remove(Key.Name);
+                        m_keys.Remove(key.Name);
                         return true;
                     }
                     catch (Exception ex)
@@ -376,7 +374,7 @@ namespace RDSFactor
             {
                 sKey = sKey.Trim();
                 if (m_keys.ContainsKey(sKey))
-                    return (IniKey) m_keys[sKey];
+                    return m_keys[sKey];
                 return null;
             }
 
@@ -432,7 +430,7 @@ namespace RDSFactor
                 //  Value associated
                 private string m_sValue;
                 //  Pointer to the parent CIniSection
-                private IniSection m_section;
+                private readonly IniSection m_section;
 
 
                 internal IniKey(IniSection parent, string sKey)

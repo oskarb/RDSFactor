@@ -63,7 +63,7 @@ namespace RDSFactor
         {
             try
             {
-                server = new RADIUSServer(serverPort, ProcessPacket, ref Config.secrets);
+                server = new RADIUSServer(serverPort, ProcessPacket, ref Config.Secrets);
                 Logger.LogInfo("Starting Radius Server on Port " + serverPort + " ...OK");
             }
             catch (Exception)
@@ -173,7 +173,7 @@ namespace RDSFactor
                 {
                     var address = client.Name;
                     Logger.LogInfo("Adding Shared Secret for: " + address);
-                    Config.secrets.AddSharedSecret(address, client.Value);
+                    Config.Secrets.AddSharedSecret(address, client.Value);
                 }
 
                 if (confOk)

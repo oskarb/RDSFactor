@@ -58,7 +58,7 @@ namespace RDSFactor
                 // local modem
                 var modem = new SMSModem(_comPort);
                 modem.Opens();
-                modem.send(number, passcode, _smsC);
+                modem.Send(number, passcode, _smsC);
                 modem.Closes();
             }
             else

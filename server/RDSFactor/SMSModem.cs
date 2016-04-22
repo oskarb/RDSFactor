@@ -7,39 +7,41 @@ namespace RDSFactor
 {
     public class SMSModem
     {
-        private SerialPort serialPort;
+        private readonly SerialPort _serialPort;
 
         public SMSModem(string comPort)
         {
-            serialPort = new SerialPort();
-            serialPort.PortName = comPort;
-            serialPort.BaudRate = 38400;
-            serialPort.Parity = Parity.None;
-            serialPort.DataBits = 8;
-            serialPort.StopBits = StopBits.One;
-            serialPort.Handshake = Handshake.RequestToSend;
-            serialPort.DtrEnable = true;
-            serialPort.RtsEnable = true;
-            serialPort.NewLine = System.Environment.NewLine;
+            _serialPort = new SerialPort
+            {
+                PortName = comPort,
+                BaudRate = 38400,
+                Parity = Parity.None,
+                DataBits = 8,
+                StopBits = StopBits.One,
+                Handshake = Handshake.RequestToSend,
+                DtrEnable = true,
+                RtsEnable = true,
+                NewLine = Environment.NewLine
+            };
         }
 
-        public bool send(string cellNo, string sms, string SMSC)
+        public bool Send(string cellNo, string sms, string SMSC)
         {
             string messages = sms;
-            if (serialPort.IsOpen)
+            if (_serialPort.IsOpen)
             {
                 try
                 {
-                    serialPort.WriteLine("AT" + (char) 13);
+                    _serialPort.WriteLine("AT" + (char) 13);
                     Thread.Sleep(4);
-                    serialPort.WriteLine("AT+CSCA=\"" + SMSC + "\"" + (char) 13);
+                    _serialPort.WriteLine("AT+CSCA=\"" + SMSC + "\"" + (char) 13);
                     Thread.Sleep(30);
-                    serialPort.WriteLine(((char) 13).ToString());
+                    _serialPort.WriteLine(((char) 13).ToString());
                     Thread.Sleep(30);
-                    serialPort.WriteLine("AT+CMGS=\"" + cellNo + "\"");
+                    _serialPort.WriteLine("AT+CMGS=\"" + cellNo + "\"");
 
                     Thread.Sleep(30);
-                    serialPort.WriteLine(messages + (char) 26);
+                    _serialPort.WriteLine(messages + (char) 26);
                 }
                 catch (Exception ex)
                 {
@@ -54,13 +56,13 @@ namespace RDSFactor
 
         public void Opens()
         {
-            if (!serialPort.IsOpen)
+            if (!_serialPort.IsOpen)
             {
                 try
                 {
                     // bool ok =this.serialPort.IsOpen //does not work between 2 treads
 
-                    serialPort.Open();
+                    _serialPort.Open();
                 }
                 catch (Exception)
                 {
@@ -74,8 +76,8 @@ namespace RDSFactor
 
         public void Closes()
         {
-            if (serialPort.IsOpen)
-                serialPort.Close();
+            if (_serialPort.IsOpen)
+                _serialPort.Close();
         }
     }
 }

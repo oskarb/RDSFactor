@@ -10,6 +10,6 @@ namespace RDSFactor
         public static bool EnableOTP;
         public static int SessionTimeOut = 30; // in minutes
         public static int LaunchTimeOut = 30; // in seconds
-        public static NASAuthList secrets = new NASAuthList();
+        public static NASAuthList Secrets = new NASAuthList();
     }
 }
