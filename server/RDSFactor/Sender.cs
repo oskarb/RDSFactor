@@ -106,15 +106,15 @@ namespace RDSFactor
             {
                 smtp.Send(mail);
                 if (Logger.Debug)
-                    Logger.LogDebug(DateTime.Now + ": Mail sent to: " + email);
+                    Logger.LogDebug("Mail sent to: " + email);
                 return "SEND";
             }
             catch (InvalidCastException ex)
             {
                 if (Logger.Debug)
                 {
-                    Logger.LogDebug(DateTime.Now + " : Debug: " + ex.Message);
-                    Logger.LogDebug(DateTime.Now + " : Unable to send mail to: " + email +
+                    Logger.LogDebug(ex.Message);
+                    Logger.LogDebug("Unable to send mail to: " + email +
                                     "  ## Check that MAILSERVER and SENDEREMAIL are configured correctly in smscode.conf. Also check that your Webinterface server is allowed to relay through the mail server specified");
                 }
                 return "FAILED";
