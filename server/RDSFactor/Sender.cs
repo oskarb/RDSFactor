@@ -91,7 +91,7 @@ namespace RDSFactor
             }
         }
 
-        public static string SendEmail(string email, string passcode)
+        public static bool SendEmail(string email, string passcode)
         {
             var mail = new MailMessage();
             mail.To.Add(email);
@@ -107,17 +107,15 @@ namespace RDSFactor
                 smtp.Send(mail);
                 if (Logger.Debug)
                     Logger.LogDebug("Mail sent to: " + email);
-                return "SEND";
+                return true;
             }
-            catch (InvalidCastException ex)
+            catch (Exception ex)
             {
-                if (Logger.Debug)
-                {
-                    Logger.LogDebug(ex.Message);
-                    Logger.LogDebug("Unable to send mail to: " + email +
-                                    "  ## Check that MAILSERVER and SENDEREMAIL are configured correctly in smscode.conf. Also check that your Webinterface server is allowed to relay through the mail server specified");
-                }
-                return "FAILED";
+                Logger.LogInfo("ERROR: " + ex.Message);
+                Logger.LogInfo("ERROR: Unable to send mail to: " + email +
+                               "  ## Check that MAILSERVER and SENDEREMAIL are configured correctly in smscode.conf. Also check that your Webinterface server is allowed to relay through the mail server specified");
+
+                return false;
             }
         }
     }
