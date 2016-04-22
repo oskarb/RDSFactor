@@ -112,8 +112,9 @@ namespace RDSFactor
             catch (Exception ex)
             {
                 Logger.LogInfo("ERROR: " + ex.Message);
-                Logger.LogInfo("ERROR: Unable to send mail to: " + email +
-                               "  ## Check that MAILSERVER and SENDEREMAIL are configured correctly in smscode.conf. Also check that your Webinterface server is allowed to relay through the mail server specified");
+                Logger.LogInfo("ERROR: Unable to send mail to: " + email);
+                Logger.LogInfo("  ## Check that MAILSERVER and SENDEREMAIL are configured correctly." +
+                               " Also check that your server is allowed to relay through the mail server specified.");
 
                 return false;
             }

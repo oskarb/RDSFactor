@@ -46,16 +46,15 @@ namespace RDSFactor
         protected override void OnStart(string[] args)
         {
             Logger.Initialize(ApplicationPath() + "\\log.txt");
-            Logger.LogInfo("Starting Service");
-            Logger.LogInfo("Loading Configuration...");
+            Logger.LogInfo("Starting Service.");
+            Logger.LogDebug("Loading Configuration...");
             LoadConfiguration();
-            Logger.LogInfo("Starting Radius listner ports...");
             StartUpServer();
         }
 
         protected override void OnStop()
         {
-            Logger.LogInfo("Stopping Radius listner ports...");
+            Logger.LogInfo("Stopping Radius listner ports.");
         }
 
 
@@ -64,11 +63,11 @@ namespace RDSFactor
             try
             {
                 server = new RADIUSServer(serverPort, ProcessPacket, ref Config.Secrets);
-                Logger.LogInfo("Starting Radius Server on Port " + serverPort + " ...OK");
+                Logger.LogInfo($"Starting Radius Server on port {serverPort} successful.");
             }
             catch (Exception)
             {
-                Logger.LogInfo("Starting Radius Server on Port " + serverPort + "...FAILED");
+                Logger.LogInfo($"Starting Radius Server on Port {serverPort} failed.");
             }
         }
 
@@ -77,7 +76,7 @@ namespace RDSFactor
         {
             if (!packet.IsValid)
             {
-                Console.WriteLine("Packet is not valid. Discarding.");
+                Logger.LogInfo("Packet is not valid. Discarding.");
                 return;
             }
 
@@ -106,7 +105,7 @@ namespace RDSFactor
                 Config.LDAPDomain = rConfig.GetKeyValue("RDSFactor", "LDAPDomain");
                 if (Config.LDAPDomain.Length == 0)
                 {
-                    Logger.LogInfo("ERROR: LDAPDomain can not be empty");
+                    Logger.LogInfo("ERROR: LDAPDomain can not be empty.");
                     confOk = false;
                 }
 
@@ -127,7 +126,7 @@ namespace RDSFactor
                     Config.ADMobileField = rConfig.GetKeyValue("RDSFactor", "ADField");
                     if (Config.ADMobileField.Length == 0)
                     {
-                        Logger.LogInfo("ERROR:  ADField can not be empty");
+                        Logger.LogInfo("ERROR:  ADField can not be empty.");
                         confOk = false;
                     }
 
@@ -142,7 +141,7 @@ namespace RDSFactor
                                 Sender.Provider = rConfig.GetKeyValue("RDSFactor", "Provider");
                                 if (Sender.Provider.Length == 0)
                                 {
-                                    Logger.LogInfo("ERROR:  Provider can not be empty");
+                                    Logger.LogInfo("ERROR:  Provider can not be empty.");
                                     confOk = false;
                                 }
                                 break;
@@ -150,19 +149,19 @@ namespace RDSFactor
                                 Sender.ComPort = rConfig.GetKeyValue("RDSFactor", "COMPORT");
                                 if (Sender.ComPort.Length == 0)
                                 {
-                                    Logger.LogInfo("ERROR:  ComPort can not be empty");
+                                    Logger.LogInfo("ERROR:  ComPort can not be empty.");
                                     confOk = false;
                                 }
                                 Sender.SmsC = rConfig.GetKeyValue("RDSFactor", "SMSC");
                                 if (Sender.SmsC.Length == 0)
                                 {
                                     Logger.LogInfo(
-                                        "ERROR:  SmsC can not be empty. See http://smsclist.com/downloads/default.txt for valid values");
+                                        "ERROR:  SmsC can not be empty. See http://smsclist.com/downloads/default.txt for valid values.");
                                     confOk = false;
                                 }
                                 break;
                             default:
-                                Logger.LogInfo("ERROR:  USELOCALMODEM contain invalid configuration. Correct value are 1 or 0");
+                                Logger.LogInfo("ERROR:  USELOCALMODEM contain invalid configuration. Correct value is 1 or 0.");
                                 confOk = false;
                                 break;
                         }
@@ -172,20 +171,20 @@ namespace RDSFactor
                 foreach (var client in rConfig.GetSection("clients").Keys)
                 {
                     var address = client.Name;
-                    Logger.LogInfo("Adding Shared Secret for: " + address);
+                    Logger.LogInfo($"Adding shared secret for: {address}");
                     Config.Secrets.AddSharedSecret(address, client.Value);
                 }
 
                 if (confOk)
-                    Logger.LogInfo("Loading Configuration...OK");
+                    Logger.LogInfo("Loading configuration successfully.");
                 else
-                    Logger.LogInfo("Loading Configuration...FAILED");
+                    Logger.LogInfo("Loading configuration failed.");
             }
             catch (Exception ex)
             {
                 Logger.LogInfo("ERROR loading configuration: " + ex);
-                Logger.LogInfo("ERROR: Missing RDSFactor.ini from startup path or RDSFactor.ini contains invalid configuration");
-                Logger.LogInfo("Loading Configuration...FAILED");
+                Logger.LogInfo("ERROR: Missing RDSFactor.ini from startup path or RDSFactor.ini contains invalid configuration.");
+                Logger.LogInfo("Loading configuration failed.");
                 Environment.Exit(1);
             }
         }

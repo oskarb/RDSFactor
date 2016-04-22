@@ -20,7 +20,7 @@ namespace RDSFactor
             if (Environment.UserInteractive)
             {
                 server.StartInteractive(args);
-                Console.WriteLine("Type any character to exit");
+                Console.WriteLine("Type any character to exit.");
                 Console.Read();
                 server.StopInteractive();
             }
