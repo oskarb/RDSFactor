@@ -83,6 +83,7 @@
     <Compile Include="Exceptions\SMSSendException.cs" />
     <Compile Include="Handlers\CryptoHelper.cs" />
     <Compile Include="Logger.cs" />
+    <Compile Include="ModemType.cs" />
     <Compile Include="PassCodeGenerator.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>

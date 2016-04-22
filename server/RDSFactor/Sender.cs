@@ -8,7 +8,7 @@ namespace RDSFactor
     class Sender
     {
         private static string _provider = "";
-        private static int _modemType = 0;
+        private static ModemType _modemType = ModemType.Internet;
         private static string _comPort = "";
         private static string _smsC = "";
         private static string _mailServer = "";
@@ -20,7 +20,7 @@ namespace RDSFactor
             get { return _provider; }
         }
 
-        public static int ModemType
+        public static ModemType ModemType
         {
             set { _modemType = value; }
             get { return _modemType; }
@@ -53,7 +53,7 @@ namespace RDSFactor
         public static void SendSMS(string number, string passcode)
         {
             // test if using online sms provider or local modem
-            if (_modemType == 1)
+            if (_modemType == ModemType.SmsModem)
             {
                 // local modem
                 var modem = new SMSModem(_comPort);

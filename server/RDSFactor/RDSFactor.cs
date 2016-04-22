@@ -134,10 +134,11 @@ namespace RDSFactor
                     if (rConfig.GetKeyValue("RDSFactor", "EnableSMS") == "1")
                     {
                         EnableSMS = true;
-                        Sender.ModemType = Convert.ToInt32(rConfig.GetKeyValue("RDSFactor", "USELOCALMODEM"));
+                        Sender.ModemType =
+                            (ModemType) Convert.ToInt32(rConfig.GetKeyValue("RDSFactor", "USELOCALMODEM"));
                         switch (Sender.ModemType)
                         {
-                            case 0:
+                            case ModemType.Internet:
                                 Sender.Provider = rConfig.GetKeyValue("RDSFactor", "Provider");
                                 if (Sender.Provider.Length == 0)
                                 {
@@ -145,7 +146,7 @@ namespace RDSFactor
                                     confOk = false;
                                 }
                                 break;
-                            case 1:
+                            case ModemType.SmsModem:
                                 Sender.ComPort = rConfig.GetKeyValue("RDSFactor", "COMPORT");
                                 if (Sender.ComPort.Length == 0)
                                 {
