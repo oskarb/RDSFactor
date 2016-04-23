@@ -46,7 +46,9 @@ namespace RDSFactor
 
         protected override void OnStart(string[] args)
         {
-            Logger.Initialize(ApplicationPath() + "\\log.txt");
+            Logger.Initialize(ApplicationPath() + "\\log.txt",
+                ApplicationPath() + @"\conf\log4net.config.xml");
+
             Logger.LogInfo("Starting Service.");
             Logger.LogDebug("Loading Configuration...");
             LoadConfiguration();
@@ -194,7 +196,7 @@ namespace RDSFactor
                 }
 
                 if (confOk)
-                    Logger.LogInfo("Loading configuration successfully.");
+                    Logger.LogInfo("Loaded configuration successfully.");
                 else
                     Logger.LogInfo("Loading configuration failed.");
             }

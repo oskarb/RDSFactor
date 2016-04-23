@@ -105,8 +105,7 @@ namespace RDSFactor
             try
             {
                 smtp.Send(mail);
-                if (Logger.Debug)
-                    Logger.LogDebug("Mail sent to: " + email);
+                Logger.LogDebug("Mail sent to: " + email);
                 return true;
             }
             catch (Exception ex)
