@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Net.Mail;
 using RDSFactor.Exceptions;
@@ -65,10 +66,9 @@ namespace RDSFactor
             {
                 Logger.LogDebug("Sending OTP: " + passcode + " to: " + number);
 
-                // TODO: Use HttpUtility UrlEncode when we figure out how to add the dll!!!
                 string url = _provider;
-                url = url.Replace("***TEXTMESSAGE***", passcode);
-                url = url.Replace("***NUMBER***", number);
+                url = url.Replace("***TEXTMESSAGE***", WebUtility.UrlEncode(passcode));
+                url = url.Replace("***NUMBER***", WebUtility.UrlEncode(number));
 
                 var client = new HttpClient();
 
