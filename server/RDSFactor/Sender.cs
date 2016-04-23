@@ -64,7 +64,7 @@ namespace RDSFactor
             }
             else
             {
-                Logger.LogDebug("Sending OTP: " + passcode + " to: " + number);
+                Logger.LogDebug("Begin HTTP call to send SMS pass code.");
 
                 string url = _provider;
                 url = url.Replace("***TEXTMESSAGE***", WebUtility.UrlEncode(passcode));
@@ -77,12 +77,10 @@ namespace RDSFactor
 
                 if (response.IsSuccessStatusCode)
                 {
-                    if (url.IndexOf("cpsms.dk") != -1)
-                    {
-                        // NOTE: Yes cpsms does indeed return HTTP 200 on errors!?!
-                        if (content.IndexOf("error") != -1)
-                            throw new SMSSendException(content);
-                    }
+                    if (url.IndexOf("cpsms.dk") != -1 && content.IndexOf("error") != -1)
+                        throw new SMSSendException(content);
+
+                    LogPassCodeSentSuccessfully(passcode, "SMS", number);
                 }
                 else
                 {
@@ -90,6 +88,7 @@ namespace RDSFactor
                 }
             }
         }
+
 
         public static bool SendEmail(string email, string passcode)
         {
@@ -105,7 +104,7 @@ namespace RDSFactor
             try
             {
                 smtp.Send(mail);
-                Logger.LogDebug("Mail sent to: " + email);
+                LogPassCodeSentSuccessfully(passcode, "EMAIL", email);
                 return true;
             }
             catch (Exception ex)
@@ -116,6 +115,12 @@ namespace RDSFactor
 
                 return false;
             }
+        }
+
+
+        private static void LogPassCodeSentSuccessfully(string passcode, string method, string destination)
+        {
+            Logger.LogInfo($"One time password {passcode} sent to: ({method}) {destination}");
         }
     }
 }
