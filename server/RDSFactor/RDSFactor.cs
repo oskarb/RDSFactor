@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.ServiceProcess;
 using RADAR;
@@ -123,12 +124,29 @@ namespace RDSFactor
                         Config.ADMailField = rConfig.GetKeyValue("RDSFactor", "ADMailField");
                     }
 
-                    Config.ADMobileField = rConfig.GetKeyValue("RDSFactor", "ADField");
-                    if (Config.ADMobileField.Length == 0)
+                    var adPhoneAttribute = rConfig.GetKeyValue("RDSFactor", "ADPhoneAttributes");
+                    if (!string.IsNullOrWhiteSpace(adPhoneAttribute))
                     {
-                        Logger.LogInfo("ERROR:  ADField can not be empty.");
+                        // Configured value can be any of:
+                        //      someAttribute
+                        //      someAttribute,otherAttribute  (arbitrary length)
+                        // When parsing, also be forgiving of trailing or extra commas, and whitespace around commas.
+
+                        Config.ADPhoneAttributes =
+                            adPhoneAttribute.Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(part => part.Trim())
+                                .Where(part => !string.IsNullOrWhiteSpace(part))
+                                .ToList();
+                    }
+
+                    if (Config.ADPhoneAttributes.Count == 0)
+                    {
+                        Logger.LogInfo("ERROR:  ADPhoneAttribute can not be empty. Specify" +
+                                       " the name of one or multiple LDAP attributes, separated by comma." +
+                                       " The value of the first non-empty attribute will be used.");
                         confOk = false;
                     }
+
 
                     if (rConfig.GetKeyValue<bool>("RDSFactor", "EnableSMS"))
                     {

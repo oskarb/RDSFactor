@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using RADAR;
 
 namespace RDSFactor
@@ -5,7 +6,7 @@ namespace RDSFactor
     class Config
     {
         public static string LDAPDomain = "";
-        public static string ADMobileField = "";
+        public static List<string> ADPhoneAttributes = new List<string>();
         public static string ADMailField = "";
         public static bool EnableOTP;
         public static int SessionTimeOut = 30; // in minutes

@@ -305,7 +305,7 @@ namespace RDSFactor.Handlers
 
             if (_useSmsFactor)
             {
-                var mobile = LdapGetNumber(ldapResult);
+                var mobile = LdapGetNumberCleaned(ldapResult);
                 Sender.SendSMS(mobile, challengeCode);
             }
 
@@ -348,7 +348,8 @@ namespace RDSFactor.Handlers
             search.PropertiesToLoad.Add("distinguishedName");
             if (Config.EnableOTP)
             {
-                search.PropertiesToLoad.Add(Config.ADMobileField);
+                foreach (var adAttribute in Config.ADPhoneAttributes)
+                    search.PropertiesToLoad.Add(adAttribute);
                 search.PropertiesToLoad.Add(Config.ADMailField);
             }
 
@@ -364,17 +365,33 @@ namespace RDSFactor.Handlers
         }
 
 
-        private string LdapGetNumber(SearchResult result)
+        private string LdapGetNumberCleaned(SearchResult result)
         {
-            if (!result.Properties.Contains(Config.ADMobileField))
-                throw new MissingLdapField(Config.ADMobileField, _username);
+            string mobile = null;
 
-            string mobile = (string) result.Properties[Config.ADMobileField][0];
-            mobile = mobile.Replace("+", "");
+            // Iterate over configured attributes in order, and use the first
+            // value that looks reasonable.
+            foreach (var adAttribute in Config.ADPhoneAttributes)
+            {
+                if (result.Properties.Contains(adAttribute))
+                    mobile = (string) result.Properties[adAttribute][0];
+
+                // For now, I'll retain this line of code from earlier versions, though I'm
+                // not sure why + characters are being removed. If this is for international
+                // dialing prefix, we should probably replace with the correct prefix instead,
+                // or perhaps not at all if the SMS service handles it.
+                mobile = mobile?.Replace("+", "");
+
+                mobile = mobile?.Replace(" ", "").Replace("-", "");
+
+                // If there is anything left after above cleanup, use this number.
+                if (!string.IsNullOrWhiteSpace(mobile))
+                    break;
+            }
 
             if (string.IsNullOrWhiteSpace(mobile))
             {
-                Logger.LogDebug(_packet, "Unable to find correct phone number for user " + _username);
+                Logger.LogDebug(_packet, "Unable to find any phone number for user " + _username);
                 throw new MissingNumber(_username);
             }
 
