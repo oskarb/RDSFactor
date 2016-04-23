@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO.Ports;
 using System.Threading;
-using System.Windows.Forms;
 
 namespace RDSFactor
 {
@@ -30,23 +29,16 @@ namespace RDSFactor
             string messages = sms;
             if (_serialPort.IsOpen)
             {
-                try
-                {
-                    _serialPort.WriteLine("AT" + (char) 13);
-                    Thread.Sleep(4);
-                    _serialPort.WriteLine("AT+CSCA=\"" + SMSC + "\"" + (char) 13);
-                    Thread.Sleep(30);
-                    _serialPort.WriteLine(((char) 13).ToString());
-                    Thread.Sleep(30);
-                    _serialPort.WriteLine("AT+CMGS=\"" + cellNo + "\"");
+                _serialPort.WriteLine("AT" + (char) 13);
+                Thread.Sleep(4);
+                _serialPort.WriteLine("AT+CSCA=\"" + SMSC + "\"" + (char) 13);
+                Thread.Sleep(30);
+                _serialPort.WriteLine(((char) 13).ToString());
+                Thread.Sleep(30);
+                _serialPort.WriteLine("AT+CMGS=\"" + cellNo + "\"");
 
-                    Thread.Sleep(30);
-                    _serialPort.WriteLine(messages + (char) 26);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Source);
-                }
+                Thread.Sleep(30);
+                _serialPort.WriteLine(messages + (char) 26);
 
                 return true;
             }
