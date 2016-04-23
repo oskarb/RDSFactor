@@ -7,7 +7,7 @@ namespace RDSFactor
     {
         public static string LDAPDomain = "";
         public static List<string> ADPhoneAttributes = new List<string>();
-        public static string ADMailField = "";
+        public static string ADMailAttribute = "";
         public static bool EnableOTP;
         public static int SessionTimeOut = 30; // in minutes
         public static int LaunchTimeOut = 30; // in seconds

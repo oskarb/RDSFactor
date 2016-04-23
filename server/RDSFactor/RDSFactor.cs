@@ -121,7 +121,7 @@ namespace RDSFactor
                         EnableEmail = true;
                         Sender.SenderEmail = rConfig.GetKeyValue("RDSFactor", "SenderEmail");
                         Sender.MailServer = rConfig.GetKeyValue("RDSFactor", "MailServer");
-                        Config.ADMailField = rConfig.GetKeyValue("RDSFactor", "ADMailField");
+                        Config.ADMailAttribute = rConfig.GetKeyValue("RDSFactor", "ADMailAttribute");
                     }
 
                     var adPhoneAttribute = rConfig.GetKeyValue("RDSFactor", "ADPhoneAttributes");

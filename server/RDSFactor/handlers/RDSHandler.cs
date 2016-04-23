@@ -350,7 +350,7 @@ namespace RDSFactor.Handlers
             {
                 foreach (var adAttribute in Config.ADPhoneAttributes)
                     search.PropertiesToLoad.Add(adAttribute);
-                search.PropertiesToLoad.Add(Config.ADMailField);
+                search.PropertiesToLoad.Add(Config.ADMailAttribute);
             }
 
             var result = search.FindOne();
@@ -401,10 +401,10 @@ namespace RDSFactor.Handlers
 
         private string LdapGetEmail(SearchResult result)
         {
-            if (!result.Properties.Contains(Config.ADMailField))
-                throw new MissingLdapField(Config.ADMailField, _username);
+            if (!result.Properties.Contains(Config.ADMailAttribute))
+                throw new MissingLdapField(Config.ADMailAttribute, _username);
 
-            string email = (string) result.Properties[Config.ADMailField][0];
+            string email = (string) result.Properties[Config.ADMailAttribute][0];
             if (!email.Contains("@"))
             {
                 Logger.LogDebug(_packet, "Unable to find correct email for user " + _username);
