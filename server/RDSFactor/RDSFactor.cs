@@ -54,7 +54,7 @@ namespace RDSFactor
 
         protected override void OnStop()
         {
-            Logger.LogInfo("Stopping Radius listner ports.");
+            Logger.LogInfo("Stopping Radius listener ports.");
         }
 
 
