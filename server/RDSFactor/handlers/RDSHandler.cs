@@ -107,21 +107,21 @@ namespace RDSFactor.Handlers
 
             if (storedSessionId == null)
             {
-                Logger.LogDebug(_packet, "User has no session. MUST re-authenticate!");
+                Logger.LogDebug(_packet, "User has no session and must re-authenticate.");
                 _packet.RejectAccessRequest();
                 return;
             }
 
             if (storedSessionId != packetSessionId)
             {
-                Logger.LogDebug(_packet, "Stored session id didn't match packet session id!");
+                Logger.LogDebug(_packet, "Stored session id didn't match packet session id.");
                 _packet.RejectAccessRequest();
                 return;
             }
 
             if (HasValidSession(_username))
             {
-                Logger.LogDebug(_packet, "Opening window");
+                Logger.LogDebug(_packet, "Opening application launch time window.");
                 // Prolong user session
                 SessionTimestamps[_username] = DateTime.Now;
                 // Open gateway connection window
@@ -130,7 +130,7 @@ namespace RDSFactor.Handlers
             }
             else
             {
-                Logger.LogDebug(_packet, "Session timed out -- User MUST re-authenticate");
+                Logger.LogDebug(_packet, "Session timed out -- user must re-authenticate.");
                 UserSessions.Remove(_username);
                 SessionTimestamps.Remove(_username);
                 _packet.RejectAccessRequest();
@@ -185,7 +185,7 @@ namespace RDSFactor.Handlers
 
             if (sessionId == null || launchTimestamp == default(DateTime))
             {
-                Logger.LogDebug(_packet, "User has no launch window. User must re-authenticate");
+                Logger.LogDebug(_packet, "User has no application launch time window. User must re-authenticate.");
                 _packet.RejectAccessRequest();
             }
 
@@ -201,16 +201,16 @@ namespace RDSFactor.Handlers
 
             if (HasValidLaunchWindow(_username))
             {
-                Logger.LogDebug(_packet, "Opening gateway launch window");
+                Logger.LogDebug(_packet, "Opening gateway launch time window.");
                 _packet.AcceptAccessRequest(attributes);
             }
             else
             {
-                Logger.LogDebug(_packet, "Gateway launch window has timed out!");
+                Logger.LogDebug(_packet, "Gateway launch time window has timed out.");
                 _packet.RejectAccessRequest();
             }
 
-            Logger.LogDebug(_packet, "Removing gateway launch window");
+            Logger.LogDebug(_packet, "Removing gateway launch time window.");
             UserLaunchTimestamps.Remove(_username);
         }
 
@@ -281,7 +281,7 @@ namespace RDSFactor.Handlers
             }
             else
             {
-                Logger.LogDebug(_packet, "Wrong challenge code!");
+                Logger.LogDebug(_packet, "Wrong challenge code.");
                 _packet.RejectAccessRequest();
             }
         }
@@ -357,7 +357,7 @@ namespace RDSFactor.Handlers
 
             if (result == null)
             {
-                Logger.LogDebug(_packet, "Failed to authenticate with Active Directory");
+                Logger.LogDebug(_packet, "Failed to authenticate with Active Directory.");
                 throw new MissingUser();
             }
 
@@ -391,7 +391,7 @@ namespace RDSFactor.Handlers
 
             if (string.IsNullOrWhiteSpace(mobile))
             {
-                Logger.LogDebug(_packet, "Unable to find any phone number for user " + _username);
+                Logger.LogDebug(_packet, $"Unable to find any phone number for user {_username}.");
                 throw new MissingNumber(_username);
             }
 
@@ -407,7 +407,7 @@ namespace RDSFactor.Handlers
             string email = (string) result.Properties[Config.ADMailAttribute][0];
             if (!email.Contains("@"))
             {
-                Logger.LogDebug(_packet, "Unable to find correct email for user " + _username);
+                Logger.LogDebug(_packet, $"Unable to find correct email for user {_username}.");
                 throw new MissingEmail(_username);
             }
 
