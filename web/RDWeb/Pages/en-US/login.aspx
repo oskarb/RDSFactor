@@ -121,18 +121,9 @@
             NameValueCollection objQueryString = Request.QueryString;
             if ( objQueryString["ReturnUrl"] != null )
             {
-                string strSmsToken = ConfigurationManager.AppSettings["SmsToken"];
-                if (strSmsToken == null || !(strSmsToken.Equals("true", StringComparison.CurrentCultureIgnoreCase)))
-                {
                     strReturnUrlPage = objQueryString["ReturnUrl"];
                     strReturnUrl = "?ReturnUrl=" + HttpUtility.UrlEncode(strReturnUrlPage);
                 }
-                else
-                {
-                    strReturnUrlPage = objQueryString["ReturnUrl"].ToLower();
-                    strReturnUrl = "?ReturnUrl=" + HttpUtility.UrlEncode(strReturnUrlPage.Replace("default.aspx", "tokenform.aspx")); 
-                }
-            }
             if ( objQueryString["Error"] != null )
             {
                 if ( objQueryString["Error"].Equals("WkSInUse", StringComparison.CurrentCultureIgnoreCase) )
@@ -305,26 +296,23 @@
 
         }
 
-        if (strRedirectSafeUrl == null)
+        string strSmsToken = ConfigurationManager.AppSettings["SmsToken"];
+        if (strSmsToken != null && strSmsToken.Equals("true", StringComparison.CurrentCultureIgnoreCase))
         {
-             string strSmsToken = ConfigurationManager.AppSettings["SmsToken"];
-             if (strSmsToken == null || !(strSmsToken.Equals("true", StringComparison.CurrentCultureIgnoreCase)))
-             {
-                 strRedirectSafeUrl = "default.aspx";
-             } else
-             {
-        
-                string UserPass = Request.Form["UserPass"];
-                string DomainUserName =Request.Form["DomainUserName"];
-                string Delivery =  Request.Form["rDelivery"];
-                Session["UserPass"] = UserPass;
-                Session["DomainUserName"]= DomainUserName;
-                Session["Delivery"] =  Delivery;
-                strRedirectSafeUrl = "tokenform.aspx";
-           
-            }
+            string UserPass = Request.Form["UserPass"];
+            string DomainUserName = Request.Form["DomainUserName"];
+            string Delivery =  Request.Form["rDelivery"];
+            Session["UserPass"] = UserPass;
+            Session["DomainUserName"] = DomainUserName;
+            Session["Delivery"] =  Delivery;
+            strRedirectSafeUrl = "tokenform.aspx" + strReturnUrl;
         }
-        Response.Redirect(strRedirectSafeUrl);       
+        else if (strRedirectSafeUrl == null)
+        {
+            strRedirectSafeUrl = "default.aspx";
+        }
+
+        Response.Redirect(strRedirectSafeUrl);
     }
 </script>
 <RDWAPage 

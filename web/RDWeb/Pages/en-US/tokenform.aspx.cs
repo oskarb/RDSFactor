@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -101,7 +102,16 @@ public partial class SMSToken : System.Web.UI.Page
         Response.Cookies.Add(myCookie);
 
         Session["SMSTOKEN"] = "SMS_AUTH";
-        SafeRedirect("default.aspx");
+
+        string strReturnUrlPage = "";
+        if (Request.QueryString != null)
+        {
+            NameValueCollection objQueryString = Request.QueryString;
+            if (objQueryString["ReturnUrl"] != null)
+                strReturnUrlPage = objQueryString["ReturnUrl"];
+        }
+
+        SafeRedirect(strReturnUrlPage);
     }
     
     void SafeRedirect(string strRedirectUrl){
