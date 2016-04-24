@@ -633,16 +633,13 @@
       };
 
       function tswa_bossOver(obj){
-      obj.children[0].children[0].className = 'tswa_vis1';
-      obj.children[0].style.padding = "10px 3px 2px 2px";
+        obj.children[0].children[0].className = 'tswa_vis1';
+        obj.children[0].style.padding = "10px 3px 2px 2px";
       }
       function tswa_bossOut(obj){
-      obj.children[0].children[0].className = "tswa_vis0";
-      obj.children[0].style.padding = "12px 1px 0px 4px";
+        obj.children[0].children[0].className = "tswa_vis0";
+        obj.children[0].style.padding = "12px 1px 0px 4px";
       }
-
-
-
 
       function goRDP(pid, rdpContents, url) {
         // validate RADIUS token before continuing
@@ -660,7 +657,6 @@
       function oldGoRDP(pid, rdpContents, url){
 
       if (ActiveXMode) {
-      
       goRDPAx(pid, rdpContents);
       }
       else {
@@ -693,7 +689,7 @@
         if (<xsl:value-of select="$feedidprefix"/>Controls.chkShowOptimizeExperience.checked) {
           var objRegExp = new RegExp("connection type:i:([0-9]+)", "i");
           var iIndex = strRdpFileContents.search( objRegExp );
-          <!-- Add 'connection type' if it does exist otherwise replace.  -->
+          <!-- Add 'connection type' if it does exist otherwise replace. -->
           if ( -1 == iIndex ) {
             if ( "\\n" != strRdpFileContents.charAt(strRdpFileContents.length-1) ) { 
               strRdpFileContents += "\\r\\n"; 
@@ -704,43 +700,28 @@
             }
         }
         </xsl:if>
-
-  <!--    var objRegExpS = new RegExp("server port:i:([1-65535]+)", "i");
-      var iIndexS = strRdpFileContents.search( objRegExp );
-      Add 'connection type' if it does exist otherwise replace. server port:i:3389 
-      if ( -1 == iIndexS ) {
-      if ( "\\n" != strRdpFileContents.charAt(strRdpFileContents.length-1) ) {
-      strRdpFileContents += "\\r\\n";
-      }
-      strRdpFileContents += "server port:i:11443\\r\\n";
-      } else {
-     strRdpFileContents = strRdpFileContents.replace(objRegExpS, "server port:i:11443"); 
       
-    
-      strRdpFileContents = strRdpFileContents.replace("server port", "server prut");
-   } -->
-
-      MsRdpClientShell.RdpFileContents = unescape(strRdpFileContents);
-
-      try {
-      MsRdpClientShell.Launch();
-      }
-      catch(e){
-      throw e;
-      }
+        MsRdpClientShell.RdpFileContents = unescape(strRdpFileContents);
+     
+        try {
+            MsRdpClientShell.Launch();
+        }
+        catch(e){
+            throw e;
+        }
       }
 
-
+      
       function goNonRDP(pid, arg) {
-      try {
-      location.href = unescape(arg);
-      }
-      catch(e){
-      throw e;
-      }
+        try {
+          location.href = unescape(arg);
+        }
+        catch(e){
+          throw e;
+        }
       }
 
-
+      
 
       <xsl:value-of select="$feedidprefix"/>window_onload();
     </script>

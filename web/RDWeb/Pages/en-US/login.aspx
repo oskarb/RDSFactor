@@ -1,20 +1,18 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="../Site.xsl"?>
 <?xml-stylesheet type="text/css" href="../RenderFail.css"?>
-
-<% @Page Language="C#" Debug="true" ResponseEncoding="utf-8" ContentType="text/xml" %>
+<% @Page Language="C#" Debug="false" ResponseEncoding="utf-8" ContentType="text/xml" %>
 <% @Import Namespace="System " %>
 <% @Import Namespace="System.Security" %>
 <% @Import Namespace="Microsoft.TerminalServices.Publishing.Portal.FormAuthentication" %>
 <% @Import Namespace="Microsoft.TerminalServices.Publishing.Portal" %>
-
 <script language="C#" runat=server>
 
     //
     // Customizable Text
     //
     string L_CompanyName_Text = "Work Resources";
-    
+
     //
     // Localizable Text
     //
@@ -54,7 +52,8 @@
     //
     public string strErrorMessageRowStyle;
     public string strDeliveryStyle;
-    public bool bFailedLogon = false, bFailedAuthorization = false, bServerConfigChanged = false, bWorkspaceInUse = false, bWorkspaceDisconnected = false, bPasswordExpired = false, bPasswordExpiredNoChange = false, bFailedSMSLogon = false, bFailedRadiusLogon = false, bOTP = false;
+    public bool bFailedLogon = false, bFailedAuthorization = false, bServerConfigChanged = false, bWorkspaceInUse = false, bWorkspaceDisconnected = false, bPasswordExpired =  false, bPasswordExpiredNoChange = false;
+    public bool bFailedSMSLogon = false, bFailedRadiusLogon = false, bOTP = false;
     public string strWorkSpaceID = "";
     public string strRDPCertificates = "";
     public string strRedirectorName = "";
@@ -63,6 +62,7 @@
     public string strPasswordExpiredQueryString = "";
     public string sHelpSourceServer, sLocalHelp;
     public Uri baseUrl;
+
     public bool bEnableSMS = false;
     public bool bEnableMail = false;
     public bool bSessionExpired = false;
@@ -83,7 +83,8 @@
         }
 
         // gives us https://<machine>/rdweb/pages/<lang>/
-	    baseUrl = new Uri(new Uri(GetRealRequestUri(), Request.FilePath), ".");
+        baseUrl = new Uri(new Uri(GetRealRequestUri(), Request.FilePath), ".");
+
         sLocalHelp = ConfigurationManager.AppSettings["LocalHelp"];
         if ((sLocalHelp != null) && (sLocalHelp == "true"))
         {
@@ -94,9 +95,14 @@
             sHelpSourceServer = "http://go.microsoft.com/fwlink/?LinkId=141038";
         }
         
-
-        strPrivateModeTimeout = ConfigurationManager.AppSettings["PrivateModeSessionTimeoutInMinutes"];
-        strPublicModeTimeout = ConfigurationManager.AppSettings["PublicModeSessionTimeoutInMinutes"];
+        try
+        {
+            strPrivateModeTimeout = ConfigurationManager.AppSettings["PrivateModeSessionTimeoutInMinutes"].ToString();
+            strPublicModeTimeout = ConfigurationManager.AppSettings["PublicModeSessionTimeoutInMinutes"].ToString();
+        }
+        catch (Exception objException)
+        {
+        }
 
         bOTP = ConfigurationManager.AppSettings["OTP"] == "true";
         bEnableSMS = ConfigurationManager.AppSettings["EnableSMS"] == "true";
@@ -121,9 +127,9 @@
             NameValueCollection objQueryString = Request.QueryString;
             if ( objQueryString["ReturnUrl"] != null )
             {
-                    strReturnUrlPage = objQueryString["ReturnUrl"];
-                    strReturnUrl = "?ReturnUrl=" + HttpUtility.UrlEncode(strReturnUrlPage);
-                }
+                strReturnUrlPage = objQueryString["ReturnUrl"];
+                strReturnUrl = "?ReturnUrl=" + HttpUtility.UrlEncode(strReturnUrlPage);
+            }
             if ( objQueryString["Error"] != null )
             {
                 if ( objQueryString["Error"].Equals("WkSInUse", StringComparison.CurrentCultureIgnoreCase) )
@@ -291,7 +297,7 @@
                 redirectUri.Scheme.Equals(Request.Url.Scheme)
                )
             {
-            strRedirectSafeUrl = redirectUri.AbsoluteUri;   
+                strRedirectSafeUrl = redirectUri.AbsoluteUri;   
             }
 
         }
@@ -312,8 +318,9 @@
             strRedirectSafeUrl = "default.aspx";
         }
 
-        Response.Redirect(strRedirectSafeUrl);
+        Response.Redirect(strRedirectSafeUrl);       
     }
+
 </script>
 <RDWAPage 
     helpurl="<%=sHelpSourceServer%>" 
@@ -338,7 +345,7 @@
     onload="onLoginPageLoad(event)" 
     onunload="onPageUnload(event)"/>
   <HTMLMainContent>
-        
+  
       <form id="FrmLogin" name="FrmLogin" action="login.aspx<%=SecurityElement.Escape(strReturnUrl)%>" method="post" onsubmit="return onLoginFormSubmit()">
 
         <input type="hidden" name="WorkSpaceID" value="<%=SecurityElement.Escape(strWorkSpaceID)%>"/>
@@ -347,7 +354,7 @@
         <input type="hidden" name="PrivateModeTimeout" value="<%=SecurityElement.Escape(strPrivateModeTimeout)%>"/>
         <input type="hidden" name="WorkspaceFriendlyName" value="<%=SecurityElement.Escape(L_CompanyName_Text)%>"/>
         <input type="hidden" name="RedirectorName" value="<%=SecurityElement.Escape(strRedirectorName)%>"/>
-       
+
         <input name="isUtf8" type="hidden" value="1"/>
         <input type="hidden" name="flags" value="0"/>
 
@@ -613,8 +620,6 @@
             </td>
             </tr> 
 
-
-  
     <%
     strErrorMessageRowStyle = "style=\"display:none\"";
     if ( bFailedAuthorization )

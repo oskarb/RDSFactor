@@ -33,7 +33,7 @@
                     {
                         strQueryString = "?Error=WkSDisconnected";
                     }
-		            else if ( objQueryString["Error"].Equals("LoginSMSFailed", StringComparison.CurrentCultureIgnoreCase) )
+                    else if ( objQueryString["Error"].Equals("LoginSMSFailed", StringComparison.CurrentCultureIgnoreCase) )
                     {
                         strQueryString = "?Error=LoginSMSFailed";
                     }

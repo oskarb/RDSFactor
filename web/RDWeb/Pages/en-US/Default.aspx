@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<% @Page Language="C#" Debug="true" ResponseEncoding="utf-8" ContentType="text/xml" %>
+<% @Page Language="C#" Debug="false" ResponseEncoding="utf-8" ContentType="text/xml" %>
 <% @Import Namespace="System.Globalization" %>
 <% @Import Namespace="System.Web.Configuration" %>
 <% @Import Namespace="System.Security" %>
@@ -46,8 +46,8 @@
         string strReturnUrlPage = "";
         
         // gives us https://<machine>/rdweb/pages/<lang>/
-    //    baseUrl = new Uri(new Uri(Request.Url, Request.FilePath), ".");
         baseUrl = new Uri(new Uri(GetRealRequestUri(), Request.FilePath), ".");
+        
         try
         {
             string strShowOptimzeExperienceValue = ConfigurationManager.AppSettings["ShowOptimizeExperience"];
@@ -94,12 +94,10 @@
             {
                 if (String.IsNullOrEmpty(strReturnUrl))
                 {
-                   
                     Response.Redirect(new Uri(baseUrl,"login.aspx?ReturnUrl=" + Request.Path).AbsoluteUri);
                 }
                 else
                 {
-                 
                     Response.Redirect(new Uri(baseUrl, "login.aspx" + strReturnUrl).AbsoluteUri);
                 }
             }
@@ -108,7 +106,6 @@
             strUserSID = objTSFormAuthTicketInfo.UserSid;
             bPrivateMode = objTSFormAuthTicketInfo.PrivateMode;
             strDomainUserName = objTSFormAuthTicketInfo.DomainUserName;
-          
 
             if ( bPrivateMode == true )
             {
@@ -236,7 +233,6 @@ public static Uri GetRealRequestUri()
    </head>
    <body>
      <p id=""BadFolder1"">" + L_BadFolderErrorBody_Text + @"</p>     
-     
    </body>
  </html>");
         Response.End();
@@ -264,7 +260,6 @@ public static Uri GetRealRequestUri()
                 <p><%=L_RenderFailP1_Text%></p>
                 <p><%=L_RenderFailP2_Text%></p>
                 <p><%=L_RenderFailP3_Text%></p>
-              
             </body>
         </html> 
     </RenderFailureMessage>
@@ -541,7 +536,6 @@ public static Uri GetRealRequestUri()
         background-color:white;
       }
     </Style>
-   
     <AppFeed
         showpubliccheckbox="<%=bShowPublicCheckBox.ToString().ToLower()%>"
         privatemode="<%=bPrivateMode.ToString().ToLower()%>"
@@ -555,9 +549,6 @@ public static Uri GetRealRequestUri()
         }
         %>
     >
-	
         <%=strAppFeed%>
-        
     </AppFeed>
-    
 </RDWAPage>
