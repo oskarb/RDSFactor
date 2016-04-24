@@ -33,14 +33,6 @@
                     {
                         strQueryString = "?Error=WkSDisconnected";
                     }
-		            else if ( objQueryString["Error"].Equals("LoginSMSFailed", StringComparison.CurrentCultureIgnoreCase) )
-                    {
-                        strQueryString = "?Error=LoginSMSFailed";
-                    }
-                    else if ( objQueryString["Error"].Equals("LoginRadiusFailed", StringComparison.CurrentCultureIgnoreCase) )
-                    {
-                        strQueryString = "?Error=LoginRadiusFailed";
-                    }
                 }
             }
             Response.Redirect( "login.aspx" + strQueryString );

@@ -1,20 +1,18 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="../Site.xsl"?>
 <?xml-stylesheet type="text/css" href="../RenderFail.css"?>
-
-<% @Page Language="C#" Debug="true" ResponseEncoding="utf-8" ContentType="text/xml" %>
+<% @Page Language="C#" Debug="false" ResponseEncoding="utf-8" ContentType="text/xml" %>
 <% @Import Namespace="System " %>
 <% @Import Namespace="System.Security" %>
 <% @Import Namespace="Microsoft.TerminalServices.Publishing.Portal.FormAuthentication" %>
 <% @Import Namespace="Microsoft.TerminalServices.Publishing.Portal" %>
-
 <script language="C#" runat=server>
 
     //
     // Customizable Text
     //
     string L_CompanyName_Text = "Work Resources";
-    
+
     //
     // Localizable Text
     //
@@ -27,9 +25,6 @@
     const string L_ExistingWorkspaceLabel_Text = "Another user of your computer is currently using this connection.  This user must disconnect before you can log on.";
     const string L_DisconnectedWorkspaceLabel_Text = "Another user of your computer has disconnected from this connection.  Please type your user name and password again.";
     const string L_LogonFailureLabel_Text = "The user name or password that you entered is not valid. Try typing it again.";
-    const string L_LogonSMSFailureLabel_Text = "The token code that you entered is not valid. Try again.";
-    const string L_LogonRadiusFailureLabel_Text = "The radius server did not respond. Check radius configuration or give it another try.";
-    const string L_SessionExpired_Text = "The session has expired. Please login again.";
     const string L_DomainNameMissingLabel_Text = "You must enter a valid domain name.";
     const string L_AuthorizationFailureLabel_Text = "You aren’t authorized to log on to this connection.  Contact your system administrator for authorization.";
     const string L_ServerConfigChangedLabel_Text = "Your RD Web Access session expired due to configuration changes on the remote computer.  Please sign in again.";
@@ -53,8 +48,7 @@
     // Page Variables
     //
     public string strErrorMessageRowStyle;
-    public string strDeliveryStyle;
-    public bool bFailedLogon = false, bFailedAuthorization = false, bServerConfigChanged = false, bWorkspaceInUse = false, bWorkspaceDisconnected = false, bPasswordExpired = false, bPasswordExpiredNoChange = false, bFailedSMSLogon = false, bFailedRadiusLogon = false, bOTP = false;
+    public bool bFailedLogon = false, bFailedAuthorization = false, bServerConfigChanged = false, bWorkspaceInUse = false, bWorkspaceDisconnected = false, bPasswordExpired =  false, bPasswordExpiredNoChange = false;
     public string strWorkSpaceID = "";
     public string strRDPCertificates = "";
     public string strRedirectorName = "";
@@ -63,12 +57,9 @@
     public string strPasswordExpiredQueryString = "";
     public string sHelpSourceServer, sLocalHelp;
     public Uri baseUrl;
-    public bool bEnableSMS = false;
-    public bool bEnableMail = false;
-    public bool bSessionExpired = false;
+
     public string strPrivateModeTimeout = "240";
     public string strPublicModeTimeout = "20";
-    public string message;
 
     public WorkspaceInfo objWorkspaceInfo = null;
 
@@ -83,7 +74,8 @@
         }
 
         // gives us https://<machine>/rdweb/pages/<lang>/
-	    baseUrl = new Uri(new Uri(GetRealRequestUri(), Request.FilePath), ".");
+        baseUrl = new Uri(new Uri(Request.Url, Request.FilePath), ".");
+
         sLocalHelp = ConfigurationManager.AppSettings["LocalHelp"];
         if ((sLocalHelp != null) && (sLocalHelp == "true"))
         {
@@ -94,45 +86,31 @@
             sHelpSourceServer = "http://go.microsoft.com/fwlink/?LinkId=141038";
         }
         
-
-        strPrivateModeTimeout = ConfigurationManager.AppSettings["PrivateModeSessionTimeoutInMinutes"];
-        strPublicModeTimeout = ConfigurationManager.AppSettings["PublicModeSessionTimeoutInMinutes"];
-
-        bOTP = ConfigurationManager.AppSettings["OTP"] == "true";
-        bEnableSMS = ConfigurationManager.AppSettings["EnableSMS"] == "true";
-        bEnableMail = ConfigurationManager.AppSettings["EnableMail"] == "true";
+        try
+        {
+            strPrivateModeTimeout = ConfigurationManager.AppSettings["PrivateModeSessionTimeoutInMinutes"].ToString();
+            strPublicModeTimeout = ConfigurationManager.AppSettings["PublicModeSessionTimeoutInMinutes"].ToString();
+        }
+        catch (Exception objException)
+        {
+        }
     }
 
     void Page_Load(object sender, EventArgs e)
     {
-        if (Session["Message"] != null) {
-            message = (string)Session["Message"];
-            Session["Message"] = null; 
-        }
-        
-        if (!Page.IsPostBack)
-        {
-            Session["UserPass"] = "";
-            Session["DomainUserName"] = "";
-        }
-        
         if ( Request.QueryString != null )
         {
             NameValueCollection objQueryString = Request.QueryString;
             if ( objQueryString["ReturnUrl"] != null )
             {
-                    strReturnUrlPage = objQueryString["ReturnUrl"];
-                    strReturnUrl = "?ReturnUrl=" + HttpUtility.UrlEncode(strReturnUrlPage);
-                }
+                strReturnUrlPage = objQueryString["ReturnUrl"];
+                strReturnUrl = "?ReturnUrl=" + HttpUtility.UrlEncode(strReturnUrlPage);
+            }
             if ( objQueryString["Error"] != null )
             {
                 if ( objQueryString["Error"].Equals("WkSInUse", StringComparison.CurrentCultureIgnoreCase) )
                 {
                     bWorkspaceInUse = true;
-                }
-                else if (objQueryString["Error"].Equals("SessionExpired"))
-                {
-                    bSessionExpired = true;
                 }
                 else if ( objQueryString["Error"].Equals("WkSDisconnected", StringComparison.CurrentCultureIgnoreCase) )
                 {
@@ -141,14 +119,6 @@
                 else if ( objQueryString["Error"].Equals("UnauthorizedAccess", StringComparison.CurrentCultureIgnoreCase) )
                 {
                     bFailedAuthorization = true;
-                }
-                else if (objQueryString["Error"].Equals("LoginSMSFailed", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    bFailedSMSLogon = true;
-                }
-                else if (objQueryString["Error"].Equals("LoginRadiusFailed", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    bFailedRadiusLogon = true;
                 }
                 else if ( objQueryString["Error"].Equals("ServerConfigChanged", StringComparison.CurrentCultureIgnoreCase) )
                 {
@@ -218,25 +188,7 @@
 
         if ( HttpContext.Current.User.Identity.IsAuthenticated == true )
         {
-          //  if ((string)Session["SMSTOKEN"] == "NOT_SMS_AUTH")
-           // {
-          //      bFailedLogon = false;
-         //       Session["SMSTOKEN"] = "";
-         //   }
-         //   else
-         //   {
-            string strSmsToken = ConfigurationManager.AppSettings["SmsToken"];
-            if (strSmsToken == null || !(strSmsToken.Equals("true", StringComparison.CurrentCultureIgnoreCase)))
-            {
-                SafeRedirect(strReturnUrlPage);
-            }
-            else
-            {
-                Session["SMSTOKEN"] = "NOT_SMS_AUTH";
-                SafeRedirect(strReturnUrlPage);
-            }
-        //    }
-           
+            SafeRedirect(strReturnUrlPage);
         }
         else if ( HttpContext.Current.Request.HttpMethod.Equals("POST", StringComparison.CurrentCultureIgnoreCase) == true )
         {
@@ -254,66 +206,33 @@
         
         Response.Cache.SetCacheability(HttpCacheability.NoCache);
     }
-
-    public static Uri GetRealRequestUri()
-    {
-        if ((HttpContext.Current == null) || 
-             (HttpContext.Current.Request == null))
-             throw new ApplicationException("Cannot get current request.");
-        return GetRealRequestUri(HttpContext.Current.Request);
-    }
-
-    public static Uri GetRealRequestUri(HttpRequest request)
-    {
-         if (String.IsNullOrEmpty(request.Headers["Host"]))
-           return request.Url;
-         UriBuilder ub = new UriBuilder(request.Url);
-         string[] realHost = request.Headers["Host"].Split(':');
-         string host = realHost[0];
-         ub.Host = host;
-         string portString = realHost.Length > 1 ? realHost[1] : "";
-         int port;
-         if (int.TryParse(portString, out port))
-             ub.Port = port;
-         return ub.Uri;
-    }
-
+    
     private void SafeRedirect(string strRedirectUrl)
     {
         string strRedirectSafeUrl = null;
 
         if (!String.IsNullOrEmpty(strRedirectUrl))
         {
-            Uri redirectUri = new Uri(GetRealRequestUri(), strRedirectUrl);
+            Uri redirectUri = new Uri(Request.Url, strRedirectUrl);
 
             if (
                 redirectUri.Authority.Equals(Request.Url.Authority) &&
                 redirectUri.Scheme.Equals(Request.Url.Scheme)
                )
             {
-            strRedirectSafeUrl = redirectUri.AbsoluteUri;   
+                strRedirectSafeUrl = redirectUri.AbsoluteUri;   
             }
 
         }
 
-        string strSmsToken = ConfigurationManager.AppSettings["SmsToken"];
-        if (strSmsToken != null && strSmsToken.Equals("true", StringComparison.CurrentCultureIgnoreCase))
-        {
-            string UserPass = Request.Form["UserPass"];
-            string DomainUserName = Request.Form["DomainUserName"];
-            string Delivery =  Request.Form["rDelivery"];
-            Session["UserPass"] = UserPass;
-            Session["DomainUserName"] = DomainUserName;
-            Session["Delivery"] =  Delivery;
-            strRedirectSafeUrl = "tokenform.aspx" + strReturnUrl;
-        }
-        else if (strRedirectSafeUrl == null)
+        if (strRedirectSafeUrl == null)
         {
             strRedirectSafeUrl = "default.aspx";
         }
 
-        Response.Redirect(strRedirectSafeUrl);
+        Response.Redirect(strRedirectSafeUrl);       
     }
+
 </script>
 <RDWAPage 
     helpurl="<%=sHelpSourceServer%>" 
@@ -338,7 +257,7 @@
     onload="onLoginPageLoad(event)" 
     onunload="onPageUnload(event)"/>
   <HTMLMainContent>
-        
+  
       <form id="FrmLogin" name="FrmLogin" action="login.aspx<%=SecurityElement.Escape(strReturnUrl)%>" method="post" onsubmit="return onLoginFormSubmit()">
 
         <input type="hidden" name="WorkSpaceID" value="<%=SecurityElement.Escape(strWorkSpaceID)%>"/>
@@ -347,7 +266,7 @@
         <input type="hidden" name="PrivateModeTimeout" value="<%=SecurityElement.Escape(strPrivateModeTimeout)%>"/>
         <input type="hidden" name="WorkspaceFriendlyName" value="<%=SecurityElement.Escape(L_CompanyName_Text)%>"/>
         <input type="hidden" name="RedirectorName" value="<%=SecurityElement.Escape(strRedirectorName)%>"/>
-       
+
         <input name="isUtf8" type="hidden" value="1"/>
         <input type="hidden" name="flags" value="0"/>
 
@@ -389,56 +308,6 @@
                 </table>
             </td>
             </tr>
-
-    <%
-    strDeliveryStyle = "style=\"display:none\"";
-    if ( bOTP )
-    {
-   strDeliveryStyle = "style=\"display:\"";
-    }
-    %>
-            <td height="7"></td>
-            
-            <tr id="trDelivery" <%=strDeliveryStyle%> >
-            <td>
-                <table width="300" border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td width="105" align="right">Token delivery:</td>
-                    <td width="7"></td>
-                    <td align="left" width="170">
-
-              <%      if (bEnableSMS == true) {  %>
-                    <label> <input name="rDelivery" type="radio" size="25" value="SMS" 
-                            checked="checked"/>SMS</label>
-                            <%} %>
-
-                    <%      if (bEnableMail == true) {  %>
-                         <%      if (bEnableSMS == true) {  %>
-                    <label> <input name="rDelivery" type="radio" size="25" value="EMAIL"/>E-Mail </label>
-                       <%} else { %>
-                        <label> <input name="rDelivery" type="radio" size="25" value="EMAIL" checked="checked"/>E-Mail </label>
-                       <%} %>
-                    <%} %>
-                    </td>
-                </tr>
-                </table>
-            </td>
-            </tr>
-               
-            <% if (message != null){ %>
-            <tr>
-            <td>
-                <table>
-                <tr>
-                    <td height="20">&#160;</td>
-                </tr>
-                <tr>
-                    <td><span class="wrng"><%=message%></span></td>
-                </tr>
-                </table>
-            </td>
-            </tr>
-            <% } %>      
 
     <%
     strErrorMessageRowStyle = "style=\"display:none\"";
@@ -522,66 +391,6 @@
 
     <%
     strErrorMessageRowStyle = "style=\"display:none\"";
-    if ( bFailedSMSLogon == true )
-    {
-    strErrorMessageRowStyle = "style=\"display:\"";
-    }
-    %>
-            <tr id="tr1" <%=strErrorMessageRowStyle%> >
-            <td>
-                <table>
-                <tr>
-                    <td height="20">&#160;</td>
-                </tr>
-                <tr>
-                    <td><span class="wrng"><%=L_LogonSMSFailureLabel_Text%></span></td>
-                </tr>
-                </table>
-            </td>
-            </tr>
-
-    <%
-    strErrorMessageRowStyle = "style=\"display:none\"";
-    if ( bFailedRadiusLogon == true )
-    {
-    strErrorMessageRowStyle = "style=\"display:\"";
-    }
-    %>
-            <tr id="tr2" <%=strErrorMessageRowStyle%> >
-            <td>
-                <table>
-                <tr>
-                    <td height="20">&#160;</td>
-                </tr>
-                <tr>
-                    <td><span class="wrng"><%=L_LogonRadiusFailureLabel_Text%></span></td>
-                </tr>
-                </table>
-            </td>
-            </tr>
-
-    <%
-    strErrorMessageRowStyle = "style=\"display:none\"";
-    if ( bSessionExpired == true )
-    {
-    strErrorMessageRowStyle = "style=\"display:\"";
-    }
-    %>
-          <tr id="tr2" <%=strErrorMessageRowStyle%> >
-            <td>
-                <table>
-                <tr>
-                    <td height="20">&#160;</td>
-                </tr>
-                <tr>
-                    <td><span class="wrng"><%=L_SessionExpired_Text %></span></td>
-                </tr>
-                </table>
-            </td>
-          </tr>
-
-    <%
-    strErrorMessageRowStyle = "style=\"display:none\"";
     if ( bFailedLogon == true )
     {
     strErrorMessageRowStyle = "style=\"display:\"";
@@ -613,8 +422,6 @@
             </td>
             </tr> 
 
-
-  
     <%
     strErrorMessageRowStyle = "style=\"display:none\"";
     if ( bFailedAuthorization )

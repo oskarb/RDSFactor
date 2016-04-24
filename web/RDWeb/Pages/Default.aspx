@@ -10,10 +10,8 @@
 
     void goToFolder(string getLangVal)
     {
-	
-       Response.Redirect(getLangVal + "/Default.aspx" + Request.Url.Query,true);
+        Response.Redirect(getLangVal + "/Default.aspx" + Request.Url.Query,true);
     }
-
 
     void Page_Load(Object sender, EventArgs e)
     {
@@ -97,8 +95,7 @@
 			{
 				culture = culture.Parent;
 			
-				foreach(System.IO.DirectoryInfo cultureDir in cultureDirectories)
-
+				foreach(System.IO.DirectoryInfo cultureDir in cultureDirectories)
 				{
 					System.Globalization.CultureInfo ci = System.Globalization.CultureInfo.CreateSpecificCulture(cultureDir.Name);
 

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<% @Page Language="C#" Debug="true" ResponseEncoding="utf-8" ContentType="text/xml" %>
+<% @Page Language="C#" Debug="false" ResponseEncoding="utf-8" ContentType="text/xml" %>
 <% @Import Namespace="System.Globalization" %>
 <% @Import Namespace="System.Web.Configuration" %>
 <% @Import Namespace="System.Security" %>
@@ -46,8 +46,8 @@
         string strReturnUrlPage = "";
         
         // gives us https://<machine>/rdweb/pages/<lang>/
-    //    baseUrl = new Uri(new Uri(Request.Url, Request.FilePath), ".");
-        baseUrl = new Uri(new Uri(GetRealRequestUri(), Request.FilePath), ".");
+        baseUrl = new Uri(new Uri(Request.Url, Request.FilePath), ".");
+        
         try
         {
             string strShowOptimzeExperienceValue = ConfigurationManager.AppSettings["ShowOptimizeExperience"];
@@ -90,16 +90,14 @@
 
         if ( eAuthenticationMode == AuthenticationMode.Forms )
         {
-            if ( HttpContext.Current.User.Identity.IsAuthenticated == false | (string)Session["SMSTOKEN"] == "NOT_SMS_AUTH" )
+            if ( HttpContext.Current.User.Identity.IsAuthenticated == false )
             {
                 if (String.IsNullOrEmpty(strReturnUrl))
                 {
-                   
                     Response.Redirect(new Uri(baseUrl,"login.aspx?ReturnUrl=" + Request.Path).AbsoluteUri);
                 }
                 else
                 {
-                 
                     Response.Redirect(new Uri(baseUrl, "login.aspx" + strReturnUrl).AbsoluteUri);
                 }
             }
@@ -108,7 +106,6 @@
             strUserSID = objTSFormAuthTicketInfo.UserSid;
             bPrivateMode = objTSFormAuthTicketInfo.PrivateMode;
             strDomainUserName = objTSFormAuthTicketInfo.DomainUserName;
-          
 
             if ( bPrivateMode == true )
             {
@@ -201,30 +198,6 @@
         Response.Cache.SetCacheability(HttpCacheability.NoCache);
     }
 
-public static Uri GetRealRequestUri()
- {
-     if ((HttpContext.Current == null) || 
-         (HttpContext.Current.Request == null))
-         throw new ApplicationException("Cannot get current request.");
-     return GetRealRequestUri(HttpContext.Current.Request);
- }
-
- public static Uri GetRealRequestUri(HttpRequest request)
- {
-     if (String.IsNullOrEmpty(request.Headers["Host"]))
-       return request.Url;
-     UriBuilder ub = new UriBuilder(request.Url);
-     string[] realHost = request.Headers["Host"].Split(':');
-     string host = realHost[0];
-     ub.Host = host;
-     string portString = realHost.Length > 1 ? realHost[1] : "";
-     int port;
-     if (int.TryParse(portString, out port))
-         ub.Port = port;
-     return ub.Uri;
- }
-
-
     private void BadFolderRedirect()
     {
         Response.ContentType = "text/html";
@@ -236,7 +209,6 @@ public static Uri GetRealRequestUri()
    </head>
    <body>
      <p id=""BadFolder1"">" + L_BadFolderErrorBody_Text + @"</p>     
-     
    </body>
  </html>");
         Response.End();
@@ -264,7 +236,6 @@ public static Uri GetRealRequestUri()
                 <p><%=L_RenderFailP1_Text%></p>
                 <p><%=L_RenderFailP2_Text%></p>
                 <p><%=L_RenderFailP3_Text%></p>
-              
             </body>
         </html> 
     </RenderFailureMessage>
@@ -541,7 +512,6 @@ public static Uri GetRealRequestUri()
         background-color:white;
       }
     </Style>
-   
     <AppFeed
         showpubliccheckbox="<%=bShowPublicCheckBox.ToString().ToLower()%>"
         privatemode="<%=bPrivateMode.ToString().ToLower()%>"
@@ -555,9 +525,6 @@ public static Uri GetRealRequestUri()
         }
         %>
     >
-	
         <%=strAppFeed%>
-        
     </AppFeed>
-    
 </RDWAPage>
