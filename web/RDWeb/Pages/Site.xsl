@@ -22,11 +22,12 @@
         </xsl:if>
         <title ID="PAGE_TITLE"><xsl:value-of select="$strings[@id = 'PageTitle']"/></title>
         <meta name="ROBOTS" content="NOINDEX, NOFOLLOW"/>
-        <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=9"/>
         <link href="tswa.css" rel="stylesheet" type="text/css" />
         <xsl:apply-templates select="Style"/>
           
         <script language="javascript" type="text/javascript" src='../renderscripts.js'/>
+        <script language="javascript" type="text/javascript" src='../webscripts-domain.js'/>
         <script language="javascript" type="text/javascript">
           var sHelpSource = &quot;<xsl:value-of select="@helpurl"/>&quot;;          
           <xsl:value-of select="HeaderJS[1]"/>
@@ -377,7 +378,7 @@
 
           ActiveXMode = <xsl:value-of select="$feedidprefix"/>LoadControl();
           
-          if (ActiveXMode)
+          if (ActiveXMode &amp;&amp; <xsl:value-of select="$feedidprefix"/>Controls.PORTAL_REMOTE_DESKTOPS != null)
           {
             <xsl:value-of select="$feedidprefix"/>Controls.PORTAL_REMOTE_DESKTOPS.style.display = "inline";
           }
@@ -422,7 +423,7 @@
               obj += "classid='CLSID:7390f3d8-0439-4c05-91e3-cf5cb290c3d0'>";
             }
             obj += "&lt;/object&gt;";
-            obj += "var MsRdpClient = document.getElementById('MsRdpClient');";
+            obj += "&lt;script language='javascript' type='text/javascript'&gt; var MsRdpClient = document.getElementById('MsRdpClient'); &lt;\/script&gt;";
            
             document.getElementById("<xsl:value-of select="$feedidprefix"/>oDivMsRdpClient").insertAdjacentHTML("beforeEnd",obj); 
             if ( WebAccessControlPresent ) {
@@ -432,7 +433,7 @@
               MsRdpClientShell = MsRdpClient.MsRdpClientShell;
             }
               
-            if (!MsRdpClient || (MsRdpClient.readyState != 4) || MsRdpClientShell == null) {
+            if (!MsRdpClient || MsRdpClientShell == null) {
               retval = false;
               <xsl:value-of select="$feedidprefix"/>OnControlLoadError();
             }
@@ -642,7 +643,11 @@
 
       function goRDP(pid, rdpContents, url) {
       if (ActiveXMode) {
-      goRDPAx(pid, rdpContents);
+        try {
+          goRDPAx(pid, rdpContents);
+        } catch (e) {
+          location.href = url;
+        }
       }
       else {
       location.href = url;

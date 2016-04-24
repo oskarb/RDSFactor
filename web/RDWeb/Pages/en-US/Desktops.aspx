@@ -108,8 +108,8 @@
             Response.End();
         }
         
-        // gives us https://<machine>/rdweb/pages/<lang>/
-        baseUrl = new Uri(new Uri(Request.Url, Request.FilePath), ".");
+        // gives us https://<hostname>[:port]/rdweb/pages/<lang>/
+        baseUrl = new Uri(new Uri(PageContentsHelper.GetBaseUri(Context), Request.FilePath), ".");
 
         AuthenticationSection objAuthenticationSection = ConfigurationManager.GetSection("system.web/authentication") as AuthenticationSection;
         if ( objAuthenticationSection  != null )
@@ -155,7 +155,7 @@
             }
         }
 
-        objWorkspaceInfo = RdwaConfig.GetWorkspaceInfo();
+        objWorkspaceInfo = PageContentsHelper.GetWorkspaceInfo();
         if ( objWorkspaceInfo != null )
         {
             string strWorkspaceName = objWorkspaceInfo.WorkspaceName;
