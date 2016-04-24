@@ -16,7 +16,7 @@ using System.Web.Configuration;
 using System.Xml;
 using Microsoft.TerminalServices.Publishing.Portal.FormAuthentication;
 
-namespace TSWF
+namespace TSWF_PagesVdir
 {
     public partial class TsWebFeed : System.Web.UI.Page
     {
@@ -25,7 +25,7 @@ namespace TSWF
         protected void Page_Init(object sender, EventArgs e)
         {
             AuthenticationMode eAuthenticationMode = AuthenticationMode.None;
-            string strSid = "";
+            string strUserIdentity = "";
 
             AuthenticationSection objAuthenticationSection = ConfigurationManager.GetSection("system.web/authentication") as AuthenticationSection;
             if ( objAuthenticationSection  != null )
@@ -37,12 +37,13 @@ namespace TSWF
             {
                 if ( HttpContext.Current.User.Identity.IsAuthenticated == false )
                 {
-                    Uri baseUrl = new Uri(Request.Url, Request.FilePath + "/..");
-                    Response.Redirect(baseUrl.ToString() + "default.aspx?ReturnUrl=../WebFeed.aspx");
+                    Uri baseUrl = new Uri(PageContentsHelper.GetBaseUri(Context), Request.FilePath + "/..");
+                    string queryString = PageContentsHelper.AppendTenantIdToQuery("?ReturnUrl=../WebFeed.aspx");
+                    Response.Redirect(baseUrl.ToString() + "default.aspx" + queryString);
                 }
 
                 TSFormAuthTicketInfo objTSFormAuthTicketInfo = new TSFormAuthTicketInfo(HttpContext.Current);
-                strSid = objTSFormAuthTicketInfo.UserSid;
+                strUserIdentity = objTSFormAuthTicketInfo.UserIdentity;
                 //
                 // TODO: Need to correctly call this
                 //
@@ -70,10 +71,15 @@ namespace TSWF
             
             try
             {
-                WebFeed tswf = new WebFeed(rdpEmbed ? RdpType.Both : RdpType.Link);
-                oXML = tswf.GenerateFeed(strSid, xmlVersion, Request.PathInfo, true);
+                WebFeed tswf = new WebFeed(rdpEmbed ? RdpType.Both : RdpType.Link, false);
+                oXML = tswf.GenerateFeed(strUserIdentity, xmlVersion, Request.PathInfo, true);
             }
             catch (WorkspaceUnknownFolderException)
+            {
+                Response.StatusCode = 404;
+                Response.End();
+            }
+            catch (InvalidTenantException)
             {
                 Response.StatusCode = 404;
                 Response.End();
@@ -89,7 +95,5 @@ namespace TSWF
                 Response.End();
             }
         }
-
-       
     }
 }

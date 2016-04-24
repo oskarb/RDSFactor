@@ -45,21 +45,26 @@
     const string L_RenderFailTitle_Text = "Error: Unable to display RD Web Access";
     const string L_RenderFailP1_Text = "An unexpected error has occurred that is preventing this page from being displayed correctly.";
     const string L_RenderFailP2_Text = "Viewing this page in Internet Explorer with the Enhanced Security Configuration enabled can cause such an error.";
-    const string L_RenderFailP3_Text = "Please try loading this page without the Enhanced Security Configuration enabled. If this error continues to be displayed, please contact your administrator.";
+    const string L_RenderFailP3_Text = "Please try loading this page without the Enhanced Security Configuration enabled. If this error continues to be displayed, please contact your administrator."; 
+    const string L_GenericClaimsAuthErrorLabel_Text = "We can't sign you in right now. Please try again later.";
+    const string L_WrongAxVersionWarningLabel_Text = "You don't have the right version of Remote Desktop Connection to use RD Web Access.";
+    const string L_ClaimsDomainUserNameLabel_Text = "Username@domain:";
 
     //
     // Page Variables
     //
     public string strErrorMessageRowStyle;
     public string strDeliveryStyle;
-    public bool bFailedLogon = false, bFailedAuthorization = false, bServerConfigChanged = false, bWorkspaceInUse = false, bWorkspaceDisconnected = false, bPasswordExpired =  false, bPasswordExpiredNoChange = false;
+    public bool bFailedLogon = false, bFailedAuthorization = false, bFailedAuthorizationOverride = false, bServerConfigChanged = false, bWorkspaceInUse = false, bWorkspaceDisconnected = false, bPasswordExpired =  false, bPasswordExpiredNoChange = false;
     public bool bFailedSMSLogon = false, bFailedRadiusLogon = false, bOTP = false;
     public string strWorkSpaceID = "";
     public string strRDPCertificates = "";
     public string strRedirectorName = "";
+    public string strClaimsHint = "";
     public string strReturnUrl = "";
     public string strReturnUrlPage = "";
     public string strPasswordExpiredQueryString = "";
+    public string strEventLogUploadAddress = "";
     public string sHelpSourceServer, sLocalHelp;
     public Uri baseUrl;
 
@@ -82,8 +87,8 @@
             Response.End();
         }
 
-        // gives us https://<machine>/rdweb/pages/<lang>/
-        baseUrl = new Uri(new Uri(GetRealRequestUri(), Request.FilePath), ".");
+        // gives us https://<hostname>[:port]/rdweb/pages/<lang>/
+        baseUrl = new Uri(new Uri(PageContentsHelper.GetBaseUri(Context), Request.FilePath), ".");
 
         sLocalHelp = ConfigurationManager.AppSettings["LocalHelp"];
         if ((sLocalHelp != null) && (sLocalHelp == "true"))
@@ -148,6 +153,11 @@
                 {
                     bFailedAuthorization = true;
                 }
+                else if ( objQueryString["Error"].Equals("UnauthorizedAccessOverride", StringComparison.CurrentCultureIgnoreCase) )
+                {
+                    bFailedAuthorization = true;
+                    bFailedAuthorizationOverride = true;
+                }
                 else if (objQueryString["Error"].Equals("LoginSMSFailed", StringComparison.CurrentCultureIgnoreCase))
                 {
                     bFailedSMSLogon = true;
@@ -208,7 +218,7 @@
         if ( HttpContext.Current.User.Identity.IsAuthenticated != true )
         {
             // Only do this if we are actually rendering the login page, if we are just redirecting there is no need for these potentially expensive calls
-            objWorkspaceInfo = RdwaConfig.GetWorkspaceInfo();
+            objWorkspaceInfo = PageContentsHelper.GetWorkspaceInfo();
             if ( objWorkspaceInfo != null )
             {
                 strWorkSpaceID = objWorkspaceInfo.WorkspaceId;
@@ -218,8 +228,13 @@
                 {
                     L_CompanyName_Text = strWorkspaceName;
                 }
+                if (!String.IsNullOrEmpty(objWorkspaceInfo.EventLogUploadAddress))
+                {
+                    strEventLogUploadAddress = objWorkspaceInfo.EventLogUploadAddress;
+                }
             }
-            strRDPCertificates = RdwaConfig.GetRdpSigningCertificateHash();
+            strRDPCertificates = PageContentsHelper.GetRdpSigningCertificateHash();
+            strClaimsHint = PageContentsHelper.GetClaimsHint();
         }
 
         if ( HttpContext.Current.User.Identity.IsAuthenticated == true )
@@ -257,44 +272,27 @@
         {
             bFailedLogon = false;
         }
+
+        if (bFailedAuthorizationOverride)
+        {
+            bFailedLogon = false;
+        }
         
         Response.Cache.SetCacheability(HttpCacheability.NoCache);
     }
-
-    public static Uri GetRealRequestUri()
-    {
-        if ((HttpContext.Current == null) || 
-             (HttpContext.Current.Request == null))
-             throw new ApplicationException("Cannot get current request.");
-        return GetRealRequestUri(HttpContext.Current.Request);
-    }
-
-    public static Uri GetRealRequestUri(HttpRequest request)
-    {
-         if (String.IsNullOrEmpty(request.Headers["Host"]))
-           return request.Url;
-         UriBuilder ub = new UriBuilder(request.Url);
-         string[] realHost = request.Headers["Host"].Split(':');
-         string host = realHost[0];
-         ub.Host = host;
-         string portString = realHost.Length > 1 ? realHost[1] : "";
-         int port;
-         if (int.TryParse(portString, out port))
-             ub.Port = port;
-         return ub.Uri;
-    }
-
+    
     private void SafeRedirect(string strRedirectUrl)
     {
         string strRedirectSafeUrl = null;
 
         if (!String.IsNullOrEmpty(strRedirectUrl))
         {
-            Uri redirectUri = new Uri(GetRealRequestUri(), strRedirectUrl);
+            Uri baseUrl = PageContentsHelper.GetBaseUri(Context);
+            Uri redirectUri = new Uri(new Uri(baseUrl, Request.FilePath), strRedirectUrl + PageContentsHelper.AppendTenantIdToQuery(String.Empty));
 
             if (
-                redirectUri.Authority.Equals(Request.Url.Authority) &&
-                redirectUri.Scheme.Equals(Request.Url.Scheme)
+                redirectUri.Authority.Equals(baseUrl.Authority) &&
+                redirectUri.Scheme.Equals(baseUrl.Scheme)
                )
             {
                 strRedirectSafeUrl = redirectUri.AbsoluteUri;   
@@ -311,16 +309,15 @@
             Session["UserPass"] = UserPass;
             Session["DomainUserName"] = DomainUserName;
             Session["Delivery"] =  Delivery;
-            strRedirectSafeUrl = "tokenform.aspx" + strReturnUrl;
+            strRedirectSafeUrl = "tokenform.aspx" + PageContentsHelper.AppendTenantIdToQuery(strReturnUrl);
         }
         else if (strRedirectSafeUrl == null)
         {
-            strRedirectSafeUrl = "default.aspx";
+            strRedirectSafeUrl = "default.aspx" + PageContentsHelper.AppendTenantIdToQuery(String.Empty);
         }
 
         Response.Redirect(strRedirectSafeUrl);       
     }
-
 </script>
 <RDWAPage 
     helpurl="<%=sHelpSourceServer%>" 
@@ -346,21 +343,35 @@
     onunload="onPageUnload(event)"/>
   <HTMLMainContent>
   
-      <form id="FrmLogin" name="FrmLogin" action="login.aspx<%=SecurityElement.Escape(strReturnUrl)%>" method="post" onsubmit="return onLoginFormSubmit()">
+      <form id="FrmLogin" name="FrmLogin" action="login.aspx<%=SecurityElement.Escape(PageContentsHelper.AppendTenantIdToQuery(strReturnUrl))%>" method="post" onsubmit="return onLoginFormSubmit()">
 
         <input type="hidden" name="WorkSpaceID" value="<%=SecurityElement.Escape(strWorkSpaceID)%>"/>
         <input type="hidden" name="RDPCertificates" value="<%=SecurityElement.Escape(strRDPCertificates)%>"/>
         <input type="hidden" name="PublicModeTimeout" value="<%=SecurityElement.Escape(strPublicModeTimeout)%>"/>
         <input type="hidden" name="PrivateModeTimeout" value="<%=SecurityElement.Escape(strPrivateModeTimeout)%>"/>
         <input type="hidden" name="WorkspaceFriendlyName" value="<%=SecurityElement.Escape(L_CompanyName_Text)%>"/>
+        <input type="hidden" name="EventLogUploadAddress" value="<%=SecurityElement.Escape(strEventLogUploadAddress)%>"/>
         <input type="hidden" name="RedirectorName" value="<%=SecurityElement.Escape(strRedirectorName)%>"/>
+        <input type="hidden" name="ClaimsHint" value="<%=SecurityElement.Escape(strClaimsHint)%>"/>
+        <input type="hidden" name="ClaimsToken" value=""/>
 
         <input name="isUtf8" type="hidden" value="1"/>
         <input type="hidden" name="flags" value="0"/>
 
 
+        <table id="tableLoginDisabled" width="300" border="0" align="center" cellpadding="0" cellspacing="0" style="display:none">
+            <tr>
+                <td height="20">&#160;</td>
+            </tr>
+            <tr>
+                <td><span class="wrng"><%=L_WrongAxVersionWarningLabel_Text%></span></td>
+            </tr>
+            <tr>
+                <td height="50">&#160;</td>
+            </tr>
+        </table>
 
-        <table width="300" border="0" align="center" cellpadding="0" cellspacing="0">
+        <table id="tableLoginForm" width="300" border="0" align="center" cellpadding="0" cellspacing="0" style="display:none">
 
             <tr>
             <td height="20">&#160;</td>
@@ -370,7 +381,8 @@
             <td>
                 <table width="300" border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td width="130" align="right"><%=L_DomainUserNameLabel_Text%></td>
+                    <td id="tdDomainUserNameLabel" width="130" align="right" style="display:none"><%=L_DomainUserNameLabel_Text%></td>
+                    <td id="tdClaimsDomainUserNameLable" width="130" align="right" style="display:none"><%=L_ClaimsDomainUserNameLabel_Text%></td>
                     <td width="7"></td>
                     <td align="right">
                     <label><input id="DomainUserName" name="DomainUserName" type="text" class="textInputField" runat="server" size="25" autocomplete="off" /></label>
@@ -622,7 +634,7 @@
 
     <%
     strErrorMessageRowStyle = "style=\"display:none\"";
-    if ( bFailedAuthorization )
+    if ( bFailedAuthorization || bFailedAuthorizationOverride )
     {
     strErrorMessageRowStyle = "style=\"display:\"";
     }
@@ -660,6 +672,19 @@
             </td>
             </tr>
 
+            <tr id="trErrorGenericClaimsAuthFailure" style="display:none" >
+            <td>
+                <table>
+                <tr>
+                    <td height="20">&#160;</td>
+                </tr>
+                <tr>
+                    <td><span class="wrng"><%=L_GenericClaimsAuthErrorLabel_Text%></span></td>
+                </tr>
+                </table>
+            </td>
+            </tr> 
+
             <tr>
             <td height="20">&#160;</td>
             </tr>
@@ -693,8 +718,8 @@
                     <td><%=L_PublicLabel_Text%></td>
                 </tr>
                 <tr id="trPubExp" style="display:none" >
-      			        <td width="30"></td>
-      			        <td><span class="expl"><%=L_PublicExplanationLabel_Text%></span></td>
+                    <td width="30"></td>
+                    <td><span class="expl"><%=L_PublicExplanationLabel_Text%></span></td>
                 </tr>
                 <tr>
                     <td height="7"></td>
@@ -713,8 +738,8 @@
                     <td><%=L_PrivateLabel_Text%></td>
                 </tr>
                 <tr id="trPrvtExp" style="display:none" >
-                  	    <td width="30"></td>
-        			    <td><span class="expl"><%=L_PrivateExplanationLabel_Text%></span></td>
+                    <td width="30"></td>
+                    <td><span class="expl"><%=L_PrivateExplanationLabel_Text%></span></td>
                 </tr>
                 <tr>
                     <td height="7"></td>

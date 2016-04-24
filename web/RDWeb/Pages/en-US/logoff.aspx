@@ -15,7 +15,7 @@
 
         if ( HttpContext.Current.User.Identity.IsAuthenticated == true )
         {
-            Response.Redirect( "default.aspx" );
+            Response.Redirect( "default.aspx" + AppendTenantIdToQuery(String.Empty) );
         }
         else
         {
@@ -43,8 +43,31 @@
                     }
                 }
             }
-            Response.Redirect( "login.aspx" + strQueryString );
+            Response.Redirect( "login.aspx" + AppendTenantIdToQuery(strQueryString) );
         }
+    }
+
+    // BUGBUG: Temporary workaround while we need to expose the tenant ID as a query string to end-users
+    private const string tenantIdLabel = "tenantId";
+    public static string AppendTenantIdToQuery(string strQueryString)
+    {
+        if(HttpContext.Current.Request.QueryString != null)
+        {
+            if(!String.IsNullOrEmpty(HttpContext.Current.Request.QueryString[tenantIdLabel]))
+            {
+                string strTenantIdParams = tenantIdLabel + "=" + HttpUtility.UrlEncode(HttpContext.Current.Request.QueryString[tenantIdLabel]);
+                if(String.IsNullOrEmpty(strQueryString))
+                {
+                    return "?" + strTenantIdParams; 
+                }
+                else
+                {
+                    return strQueryString + "&" + strTenantIdParams;
+                }
+            }
+        }
+        
+        return strQueryString;
     }
 
 </script>

@@ -7,6 +7,7 @@ using System.Web.UI;
 using System.Web.UI.WebControls;
 using System.Configuration;
 using System.Text;
+using Microsoft.TerminalServices.Publishing.Portal;
 using RADAR;
 
 public partial class SMSToken : System.Web.UI.Page
@@ -117,41 +118,23 @@ public partial class SMSToken : System.Web.UI.Page
     void SafeRedirect(string strRedirectUrl){
         string strRedirectSafeUrl = null;
 
-        if (!String.IsNullOrEmpty(strRedirectUrl)){
-            Uri redirectUri = new Uri(GetRealRequestUri(), strRedirectUrl);
+        if (!String.IsNullOrEmpty(strRedirectUrl))
+        {
+            Uri baseUrl = PageContentsHelper.GetBaseUri(Context);
+            Uri redirectUri = new Uri(new Uri(baseUrl, Request.FilePath), strRedirectUrl + PageContentsHelper.AppendTenantIdToQuery(String.Empty));
 
-            if (redirectUri.Authority.Equals(Request.Url.Authority) && redirectUri.Scheme.Equals(Request.Url.Scheme)){
+            if (redirectUri.Authority.Equals(baseUrl.Authority) &&
+                redirectUri.Scheme.Equals(baseUrl.Scheme))
+            {
                 strRedirectSafeUrl = redirectUri.AbsoluteUri;
             }
         }
 
         if (strRedirectSafeUrl == null){
-            strRedirectSafeUrl = "default.aspx";
+            strRedirectSafeUrl = "default.aspx" + PageContentsHelper.AppendTenantIdToQuery(String.Empty);
         }
 
         Response.Redirect(strRedirectSafeUrl, false);
-    }
-
-    public static Uri GetRealRequestUri(HttpRequest request){
-        if (String.IsNullOrEmpty(request.Headers["Host"]))
-            return request.Url;
-
-        UriBuilder ub = new UriBuilder(request.Url);
-        string[] realHost = request.Headers["Host"].Split(':');
-        string host = realHost[0];
-        ub.Host = host;
-        string portString = realHost.Length > 1 ? realHost[1] : "";
-        int port;
-        if (int.TryParse(portString, out port))
-            ub.Port = port;
-        return ub.Uri;
-    }
-
-    public static Uri GetRealRequestUri()
-    {
-        if ((HttpContext.Current == null) || (HttpContext.Current.Request == null))
-            throw new ApplicationException("Cannot get current request.");
-        return GetRealRequestUri(HttpContext.Current.Request);
     }
 
     void Page_PreInit(object Sender, EventArgs e){
@@ -162,8 +145,8 @@ public partial class SMSToken : System.Web.UI.Page
            Response.End();
         }
 
-        // gives us https://<machine>/rdweb/pages/<lang>/
-	    baseUrl = new Uri(new Uri(GetRealRequestUri(), Request.FilePath), ".");
+        // gives us https://<hostname>[:port]/rdweb/pages/<lang>/
+        baseUrl = new Uri(new Uri(PageContentsHelper.GetBaseUri(Context), Request.FilePath), ".");
         sLocalHelp = ConfigurationManager.AppSettings["LocalHelp"];
         if ((sLocalHelp != null) && (sLocalHelp == "true")){
             sHelpSourceServer = "./rap-help.htm";

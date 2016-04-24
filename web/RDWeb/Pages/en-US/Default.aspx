@@ -34,7 +34,7 @@
     public bool bShowOptimizeExperience = false, bOptimizeExperienceState = false;
     public AuthenticationMode eAuthenticationMode = AuthenticationMode.None;
     public string strTicketName = "";
-    public string strDomainUserName = "", strUserSID = "";
+    public string strDomainUserName = "", strUserIdentity = "";
     public string strAppFeed;
 
     public WorkspaceInfo objWorkspaceInfo = null;
@@ -45,8 +45,8 @@
         string strReturnUrl = "";
         string strReturnUrlPage = "";
         
-        // gives us https://<machine>/rdweb/pages/<lang>/
-        baseUrl = new Uri(new Uri(GetRealRequestUri(), Request.FilePath), ".");
+        // gives us https://<hostname>[:port]/rdweb/pages/<lang>/
+        baseUrl = new Uri(new Uri(PageContentsHelper.GetBaseUri(Context), Request.FilePath), ".");
         
         try
         {
@@ -92,18 +92,21 @@
         {
             if ( HttpContext.Current.User.Identity.IsAuthenticated == false | (string)Session["SMSTOKEN"] == "NOT_SMS_AUTH" )
             {
+                string strQueryString;
                 if (String.IsNullOrEmpty(strReturnUrl))
                 {
-                    Response.Redirect(new Uri(baseUrl,"login.aspx?ReturnUrl=" + Request.Path).AbsoluteUri);
+                    strQueryString = "?ReturnUrl=" + Request.Path;
                 }
                 else
                 {
-                    Response.Redirect(new Uri(baseUrl, "login.aspx" + strReturnUrl).AbsoluteUri);
+                    strQueryString = strReturnUrl;
                 }
+
+                Response.Redirect(new Uri(baseUrl, "login.aspx" + PageContentsHelper.AppendTenantIdToQuery(strQueryString)).AbsoluteUri);
             }
 
             TSFormAuthTicketInfo objTSFormAuthTicketInfo = new TSFormAuthTicketInfo(HttpContext.Current);
-            strUserSID = objTSFormAuthTicketInfo.UserSid;
+            strUserIdentity = objTSFormAuthTicketInfo.UserIdentity;
             bPrivateMode = objTSFormAuthTicketInfo.PrivateMode;
             strDomainUserName = objTSFormAuthTicketInfo.DomainUserName;
 
@@ -160,9 +163,9 @@
         WebFeed tswf = null;
         try
         {
-            tswf = new WebFeed(RdpType.Both);
+            tswf = new WebFeed(RdpType.Both, true);
             strAppFeed = tswf.GenerateFeed(
-                            strUserSID, 
+                            strUserIdentity, 
                             FeedXmlVersion.Win8,             
                             (Request.PathInfo.Length > 0) ? Request.PathInfo : "/",
                             false); 
@@ -170,6 +173,11 @@
         catch (WorkspaceUnknownFolderException)
         {
             BadFolderRedirect();
+        }
+        catch (InvalidTenantException)
+        {
+            Response.StatusCode = 404;
+            Response.End();
         }
         catch (WorkspaceUnavailableException wue)
         {
@@ -198,30 +206,6 @@
         Response.Cache.SetCacheability(HttpCacheability.NoCache);
     }
 
-public static Uri GetRealRequestUri()
- {
-     if ((HttpContext.Current == null) || 
-         (HttpContext.Current.Request == null))
-         throw new ApplicationException("Cannot get current request.");
-     return GetRealRequestUri(HttpContext.Current.Request);
- }
-
- public static Uri GetRealRequestUri(HttpRequest request)
- {
-     if (String.IsNullOrEmpty(request.Headers["Host"]))
-       return request.Url;
-     UriBuilder ub = new UriBuilder(request.Url);
-     string[] realHost = request.Headers["Host"].Split(':');
-     string host = realHost[0];
-     ub.Host = host;
-     string portString = realHost.Length > 1 ? realHost[1] : "";
-     int port;
-     if (int.TryParse(portString, out port))
-         ub.Port = port;
-     return ub.Uri;
- }
-
-
     private void BadFolderRedirect()
     {
         Response.ContentType = "text/html";
@@ -237,8 +221,6 @@ public static Uri GetRealRequestUri()
  </html>");
         Response.End();
     }
-
-
 
 </script>
 <%="<?xml-stylesheet type=\"text/xsl\" href=\"" + SecurityElement.Escape(stylesheetUrl.AbsoluteUri) + "\"?>"%>
