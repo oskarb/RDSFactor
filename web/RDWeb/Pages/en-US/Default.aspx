@@ -90,7 +90,7 @@
 
         if ( eAuthenticationMode == AuthenticationMode.Forms )
         {
-            if ( HttpContext.Current.User.Identity.IsAuthenticated == false | (string)Session["SMSTOKEN"] == "NOT_SMS_AUTH" )
+            if ( HttpContext.Current.User.Identity.IsAuthenticated == false || !TokenHelper.IsTwoFactorAuthSatisfied() )
             {
                 string strQueryString;
                 if (String.IsNullOrEmpty(strReturnUrl))

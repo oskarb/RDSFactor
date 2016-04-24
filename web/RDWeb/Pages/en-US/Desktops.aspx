@@ -119,7 +119,7 @@
 
         if ( eAuthenticationMode == AuthenticationMode.Forms )
         {
-            if ( HttpContext.Current.User.Identity.IsAuthenticated == false )
+            if ( HttpContext.Current.User.Identity.IsAuthenticated == false || !TokenHelper.IsTwoFactorAuthSatisfied() )
             {
                 Response.Redirect("login.aspx?ReturnUrl=desktops.aspx");
             }

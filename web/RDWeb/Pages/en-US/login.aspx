@@ -239,25 +239,8 @@
 
         if ( HttpContext.Current.User.Identity.IsAuthenticated == true )
         {
-          //  if ((string)Session["SMSTOKEN"] == "NOT_SMS_AUTH")
-           // {
-          //      bFailedLogon = false;
-         //       Session["SMSTOKEN"] = "";
-         //   }
-         //   else
-         //   {
-            string strSmsToken = ConfigurationManager.AppSettings["SmsToken"];
-            if (strSmsToken == null || !(strSmsToken.Equals("true", StringComparison.CurrentCultureIgnoreCase)))
-            {
-                SafeRedirect(strReturnUrlPage);
-            }
-            else
-            {
-                Session["SMSTOKEN"] = "NOT_SMS_AUTH";
-                SafeRedirect(strReturnUrlPage);
-            }
-        //    }
-           
+            // NOTE: Don't need to check for 2FA authentication here - handled in SafeRedirect().
+            SafeRedirect(strReturnUrlPage);
         }
         else if ( HttpContext.Current.Request.HttpMethod.Equals("POST", StringComparison.CurrentCultureIgnoreCase) == true )
         {
@@ -300,8 +283,7 @@
 
         }
 
-        string strSmsToken = ConfigurationManager.AppSettings["SmsToken"];
-        if (strSmsToken != null && strSmsToken.Equals("true", StringComparison.CurrentCultureIgnoreCase))
+        if (TokenHelper.UseTwoFactorAuthentication())
         {
             string UserPass = Request.Form["UserPass"];
             string DomainUserName = Request.Form["DomainUserName"];

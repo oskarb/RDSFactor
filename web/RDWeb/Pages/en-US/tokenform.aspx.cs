@@ -102,7 +102,7 @@ public partial class SMSToken : System.Web.UI.Page
         myCookie.Expires = now.AddMinutes(480);
         Response.Cookies.Add(myCookie);
 
-        Session["SMSTOKEN"] = "SMS_AUTH";
+        TokenHelper.SetTwoFactorValidated(true);
 
         string strReturnUrlPage = "";
         if (Request.QueryString != null)

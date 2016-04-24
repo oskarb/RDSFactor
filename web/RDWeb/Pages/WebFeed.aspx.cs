@@ -35,7 +35,7 @@ namespace TSWF_PagesVdir
 
             if ( eAuthenticationMode == AuthenticationMode.Forms )
             {
-                if ( HttpContext.Current.User.Identity.IsAuthenticated == false )
+                if ( HttpContext.Current.User.Identity.IsAuthenticated == false || !TokenHelper.IsTwoFactorAuthSatisfied())
                 {
                     Uri baseUrl = new Uri(PageContentsHelper.GetBaseUri(Context), Request.FilePath + "/..");
                     string queryString = PageContentsHelper.AppendTenantIdToQuery("?ReturnUrl=../WebFeed.aspx");
