@@ -84,6 +84,11 @@ public partial class SMSToken : System.Web.UI.Page
             String message = response.Attributes.GetFirstAttribute(RadiusAttributeType.ReplyMessage).ToString();
             Session["Message"] = message;
         }
+        else
+        {
+            Session["Message"] = "Token not accepted. Try again.";
+        }
+
         logoff();
     }
 
