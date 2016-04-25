@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -19,6 +21,8 @@ namespace RDSFactor
         public static string DefaultNumberPrefix { get; set; }
 
         public static string HttpBasicAuthUserPassword { get; set; }
+        public static bool UseHttpPost { get; set; }
+        private static Dictionary<string, string> _requestParameters = new Dictionary<string, string>();
 
         public static string Provider
         {
@@ -56,6 +60,12 @@ namespace RDSFactor
             get { return _senderEmail; }
         }
 
+        public static IDictionary<string, string> RequestParameters
+        {
+            get { return _requestParameters; }
+        }
+
+
         public static void SendSMS(string number, string passcode)
         {
             // If a default prefix has been configured, try to cleanup the number
@@ -81,16 +91,48 @@ namespace RDSFactor
                 Logger.LogDebug("Begin HTTP call to send SMS pass code.");
 
                 string url = _provider;
-                url = url.Replace("***TEXTMESSAGE***", WebUtility.UrlEncode(passcode));
-                url = url.Replace("***NUMBER***", WebUtility.UrlEncode(number));
+
+                // The Provider setting may contain request parameters that should be replaced. This
+                // feature is retained for convenience and backwards compatibility, although further
+                // down we can add additional parameters.
+                url = url.Replace("***TEXTMESSAGE***", WebUtility.UrlEncode(passcode))
+                         .Replace("***NUMBER***", WebUtility.UrlEncode(number));
+
+                // Prepare request parameters. These will either be used as POST content
+                // or tacked on to the query string for GET.
+                var requestParams = new List<KeyValuePair<string, string>>();
+                foreach (var reqParameter in RequestParameters)
+                {
+                    string value = reqParameter.Value;
+                    value = value.Replace("***TEXTMESSAGE***", passcode)
+                                 .Replace("***NUMBER***", number);
+                    requestParams.Add(new KeyValuePair<string, string>(reqParameter.Key, value));
+                }
 
                 using (var client = new HttpClient())
                 {
+                    // HTTP Basic authentication, if configured.
                     if (!string.IsNullOrWhiteSpace(HttpBasicAuthUserPassword))
                         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
                             "Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes(HttpBasicAuthUserPassword)));
 
-                    HttpResponseMessage response = client.GetAsync(url).Result;
+                    HttpResponseMessage response;
+                    if (UseHttpPost)
+                    {
+                        var postContent = new FormUrlEncodedContent(requestParams);
+                        response = client.PostAsync(_provider, postContent).Result;
+                    }
+                    else
+                    {
+                        var urlEncParts =
+                            requestParams.Select(param => param.Key + "=" + WebUtility.UrlEncode(param.Value));
+                        var additionalQueryString = string.Join("&", urlEncParts);
+                        if (additionalQueryString != "" && !url.Contains("?"))
+                            additionalQueryString = "?" + additionalQueryString;
+
+                        response = client.GetAsync(url + additionalQueryString).Result;
+                    }
+
                     string content = response.Content.ReadAsStringAsync().Result;
 
                     if (response.IsSuccessStatusCode)
