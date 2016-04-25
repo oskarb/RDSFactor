@@ -126,7 +126,22 @@
             Session["UserPass"] = "";
             Session["DomainUserName"] = "";
         }
-        
+
+        // NOTE: It would seem more logical to clear the 2FA-successful flag during logout (in logoff.aspx),
+        //       but there is a problem. RD Web has its TSFormsAuthentication wrapper for FormsAuthentication,
+        //       an in its OnAuthenticateRequest() method it will actually CLEAR all REQUEST cookies before
+        //       doing signout. Note that clearing the cookies doesn't expire them in the client. It will
+        //       then explicitly expire the built-in authentication cookies, but not the session identifier.
+        //       Since the session id cookie has been cleared from the logoff request, the code in
+        //       logoff.aspx can't access the session to clear the 2FA variable. Because nothing in logoff.aspx
+        //       sets any session variables, no new session identifier is generated and sent to the client,
+        //       so it's likely that the browser will reuse the last known session identifier on the next
+        //       request, thus regaining access to the old session with the 2FA flag already set.
+        //
+        //       Therefore, clear the 2FA-validation here. Since this login-page is the only way to perform
+        //       the phase-1 authentication, it should be effective to make sure the value is removed.
+        TokenHelper.SetTwoFactorValidated(false);
+
         if ( Request.QueryString != null )
         {
             NameValueCollection objQueryString = Request.QueryString;
