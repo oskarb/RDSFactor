@@ -381,12 +381,6 @@ namespace RDSFactor.Handlers
                 if (result.Properties.Contains(adAttribute))
                     mobile = (string) result.Properties[adAttribute][0];
 
-                // For now, I'll retain this line of code from earlier versions, though I'm
-                // not sure why + characters are being removed. If this is for international
-                // dialing prefix, we should probably replace with the correct prefix instead,
-                // or perhaps not at all if the SMS service handles it.
-                mobile = mobile?.Replace("+", "");
-
                 mobile = mobile?.Replace(" ", "").Replace("-", "");
 
                 // If there is anything left after above cleanup, use this number.

@@ -14,6 +14,7 @@ namespace RDSFactor
         private static string _smsC = "";
         private static string _mailServer = "";
         private static string _senderEmail = "";
+        public static string DefaultNumberPrefix { get; set; }
 
         public static string Provider
         {
@@ -53,6 +54,15 @@ namespace RDSFactor
 
         public static void SendSMS(string number, string passcode)
         {
+            // If a default prefix has been configured, try to cleanup the number
+            // and add the prefix if the number doesn't already start with a +.
+            if (!string.IsNullOrWhiteSpace(DefaultNumberPrefix))
+            {
+                number = number.Trim().TrimStart('0');
+                if (!number.StartsWith("+"))
+                    number = DefaultNumberPrefix + number;
+            }
+
             // test if using online sms provider or local modem
             if (_modemType == ModemType.SmsModem)
             {

@@ -164,6 +164,8 @@ namespace RDSFactor
                                     Logger.LogError("Provider can not be empty.");
                                     confOk = false;
                                 }
+
+                                Sender.DefaultNumberPrefix = rConfig.GetKeyValue("RDSFactor", "DefaultNumberPrefix");
                                 break;
                             case ModemType.SmsModem:
                                 Sender.ComPort = rConfig.GetKeyValue("RDSFactor", "COMPORT");
