@@ -238,7 +238,12 @@ namespace RDSFactor.Handlers
             catch (Exception ex)
             {
                 Logger.LogDebug(_packet, "Authentication failed. Sending reject. Error: " + ex.Message);
-                _packet.RejectAccessRequest(ex.Message);
+
+                // Conceivably, the message could contain security sensitive information, or be far too
+                // technical for the average user. So just send some generic text.
+                _packet.RejectAccessRequest("Authentication failed. Verify that you have entered" +
+                                            " correct information. The administrator can find more" +
+                                            " information in the server logs.");
             }
         }
 
