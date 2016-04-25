@@ -1,7 +1,9 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Mail;
+using System.Text;
 using RDSFactor.Exceptions;
 
 namespace RDSFactor
@@ -15,6 +17,8 @@ namespace RDSFactor
         private static string _mailServer = "";
         private static string _senderEmail = "";
         public static string DefaultNumberPrefix { get; set; }
+
+        public static string HttpBasicAuthUserPassword { get; set; }
 
         public static string Provider
         {
@@ -80,21 +84,26 @@ namespace RDSFactor
                 url = url.Replace("***TEXTMESSAGE***", WebUtility.UrlEncode(passcode));
                 url = url.Replace("***NUMBER***", WebUtility.UrlEncode(number));
 
-                var client = new HttpClient();
-
-                HttpResponseMessage response = client.GetAsync(url).Result;
-                string content = response.Content.ReadAsStringAsync().Result;
-
-                if (response.IsSuccessStatusCode)
+                using (var client = new HttpClient())
                 {
-                    if (url.IndexOf("cpsms.dk") != -1 && content.IndexOf("error") != -1)
+                    if (!string.IsNullOrWhiteSpace(HttpBasicAuthUserPassword))
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                            "Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes(HttpBasicAuthUserPassword)));
+
+                    HttpResponseMessage response = client.GetAsync(url).Result;
+                    string content = response.Content.ReadAsStringAsync().Result;
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        if (url.IndexOf("cpsms.dk") != -1 && content.IndexOf("error") != -1)
+                            throw new SMSSendException(content);
+
+                        LogPassCodeSentSuccessfully(passcode, "SMS", number);
+                    }
+                    else
+                    {
                         throw new SMSSendException(content);
-
-                    LogPassCodeSentSuccessfully(passcode, "SMS", number);
-                }
-                else
-                {
-                    throw new SMSSendException(content);
+                    }
                 }
             }
         }

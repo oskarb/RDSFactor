@@ -166,6 +166,8 @@ namespace RDSFactor
                                 }
 
                                 Sender.DefaultNumberPrefix = rConfig.GetKeyValue("RDSFactor", "DefaultNumberPrefix");
+                                Sender.HttpBasicAuthUserPassword = rConfig.GetKeyValue("RDSFactor", "HttpBasicAuthUserPassword");
+
                                 break;
                             case ModemType.SmsModem:
                                 Sender.ComPort = rConfig.GetKeyValue("RDSFactor", "COMPORT");
