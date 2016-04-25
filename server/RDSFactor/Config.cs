@@ -10,7 +10,7 @@ namespace RDSFactor
         public static string ADMailAttribute = "";
         public static bool EnableOTP;
         public static int SessionTimeOut = 30; // in minutes
-        public static int LaunchTimeOut = 30; // in seconds
+        public static int LaunchTimeOut = 60; // in seconds
         public static NASAuthList Secrets = new NASAuthList();
     }
 }
