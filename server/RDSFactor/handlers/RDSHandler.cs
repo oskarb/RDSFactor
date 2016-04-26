@@ -183,6 +183,17 @@ namespace RDSFactor.Handlers
             DateTime launchTimestamp;
             UserLaunchTimestamps.TryGetValue(_username, out launchTimestamp);
 
+            if (Logger.DebugDumpState)
+            {
+                Logger.LogDebug("User sessions:");
+                foreach (var userSession in UserSessions)
+                    Logger.LogDebug($"    {userSession.Key}:{userSession.Value}");
+
+                Logger.LogDebug("User launch timestamps:");
+                foreach (var launchTimeStamps in UserLaunchTimestamps)
+                    Logger.LogDebug($"    {launchTimeStamps.Key}:{launchTimeStamps.Value}");
+            }
+
             if (sessionId == null || launchTimestamp == default(DateTime))
             {
                 Logger.LogDebug(_packet, "User has no application launch time window. User must re-authenticate.");

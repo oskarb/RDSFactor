@@ -28,6 +28,8 @@ namespace RDSFactor
             }
         }
 
+        public static bool DebugDumpState { get; set; }
+
         public static void Initialize(string logfilePath, string optionalLog4NetConfigPath)
         {
             // When interactice, also activate logging to the console.

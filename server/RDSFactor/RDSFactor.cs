@@ -104,6 +104,7 @@ namespace RDSFactor
             {
                 rConfig.Load(ApplicationPath() + @"\conf\RDSFactor.ini");
                 Logger.Debug = rConfig.GetKeyValue<bool>("RDSFactor", "Debug");
+                Logger.DebugDumpState = rConfig.GetKeyValue<bool>("RDSFactor", "DebugDumpState");
 
                 Config.LDAPDomain = rConfig.GetKeyValue("RDSFactor", "LDAPDomain");
                 if (Config.LDAPDomain.Length == 0)
