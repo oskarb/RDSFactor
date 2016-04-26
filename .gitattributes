@@ -1,0 +1,4 @@
+
+
+# Resharper DotSettings files are in Unix format
+*.DotSettings text eol=lf 
