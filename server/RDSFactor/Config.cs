@@ -12,5 +12,6 @@ namespace RDSFactor
         public static int SessionTimeOut = 30; // in minutes
         public static int LaunchTimeOut = 60; // in seconds
         public static NASAuthList Secrets = new NASAuthList();
+        public static int PassCodeLength = 6;
     }
 }

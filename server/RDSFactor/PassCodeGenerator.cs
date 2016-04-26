@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RDSFactor
@@ -8,18 +9,19 @@ namespace RDSFactor
         public static string GenerateCode()
         {
             Random ordRand = new Random();
-            int[] temp = new int[6];
+            var digits = new List<int>();
 
-            for (int i = 0; i < temp.Length; i++)
+            // Generate a 6-digit code, with no single digit occurring more than twice as
+            // a way to avoid accidentally generate "simple" codes like 001001, etc.
+
+            while (digits.Count < Config.PassCodeLength)
             {
-                var dummy = ordRand.Next(1, 9);
-                if (!temp.Contains(dummy))
-                {
-                    temp[i] = dummy;
-                }
+                var nextDigit = ordRand.Next(0, 9);
+                if (digits.Count(d => d == nextDigit) < 2)
+                    digits.Add(nextDigit);
             }
 
-            var code = string.Join(string.Empty, temp.Select(i => i.ToString()));
+            var code = string.Join(string.Empty, digits.Select(i => i.ToString()));
             return code;
         }
     }
