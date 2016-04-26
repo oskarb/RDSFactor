@@ -1,25 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Web;
-using System.Web.UI;
-using System.Web.UI.WebControls;
 using System.Configuration;
 
 using RADAR;
 
 public partial class CheckToken : System.Web.UI.Page
 {
+    private readonly string _radiusServer = ConfigurationManager.AppSettings["RadiusServer"];
+    private readonly string _radiusSharedSecret = ConfigurationManager.AppSettings["RadiusSecret"];
 
-    String radiusServer = ConfigurationManager.AppSettings["RadiusServer"];
-    String radiusSharedSecret = ConfigurationManager.AppSettings["RadiusSecret"];
-
-    RADIUSClient radiusClient;
-    String username;
-    String token;
+    readonly RADIUSClient _radiusClient;
 
     public CheckToken()
     {
-        radiusClient = new RADIUSClient(radiusServer, 1812, radiusSharedSecret);
+        _radiusClient = new RADIUSClient(_radiusServer, 1812, _radiusSharedSecret);
     }
 
     // Check validity of token (radius session id) by authenticating against 
@@ -30,7 +24,7 @@ public partial class CheckToken : System.Web.UI.Page
     // Returns 401 if not valid
     protected void Page_Load(object sender, EventArgs e)
     {
-        username = (string)Session["DomainUserName"];
+        string username = (string)Session["DomainUserName"];
         HttpCookie tokenCookie = Request.Cookies["RadiusSessionId"];
 
         // This must not be cached - we rely on this page being called on every application
@@ -42,7 +36,7 @@ public partial class CheckToken : System.Web.UI.Page
         {
             throw new HttpException(401, "Token required");
         }
-        token = tokenCookie.Value;
+        string token = tokenCookie.Value;
 
         VendorSpecificAttribute vsa = new VendorSpecificAttribute(VendorSpecificType.Generic, "LAUNCH");
         RADIUSAttributes atts = new RADIUSAttributes();
@@ -50,7 +44,7 @@ public partial class CheckToken : System.Web.UI.Page
 
         try
         {
-            RADIUSPacket response = radiusClient.Authenticate(username, token, atts);
+            RADIUSPacket response = _radiusClient.Authenticate(username, token, atts);
             if (response.Code == RadiusPacketCode.AccessAccept)
             {
                 Response.Write("Ready to launch application. Granted access!");
