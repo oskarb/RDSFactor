@@ -33,6 +33,11 @@ public partial class CheckToken : System.Web.UI.Page
         username = (string)Session["DomainUserName"];
         HttpCookie tokenCookie = Request.Cookies["RadiusSessionId"];
 
+        // This must not be cached - we rely on this page being called on every application
+        // start attempt in order to open the launch window.
+        Response.Cache.SetCacheability(HttpCacheability.NoCache);
+        Response.Cache.SetMaxAge(TimeSpan.Zero);
+
         if (tokenCookie == null)
         {
             throw new HttpException(401, "Token required");
