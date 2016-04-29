@@ -198,6 +198,7 @@ namespace RDSFactor.Handlers
             {
                 Logger.LogDebug(_packet, "User has no application launch time window. User must re-authenticate.");
                 _packet.RejectAccessRequest();
+                return;
             }
 
 
