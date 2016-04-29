@@ -202,19 +202,10 @@ namespace RDSFactor.Handlers
             }
 
 
-            var attributes = new RADIUSAttributes();
-
-            var hasProxyState = _packet.Attributes.AttributeExists(RadiusAttributeType.ProxyState);
-            if (hasProxyState)
-            {
-                var proxyState = _packet.Attributes.GetFirstAttribute(RadiusAttributeType.ProxyState);
-                attributes.Add(proxyState);
-            }
-
             if (HasValidLaunchWindow(_username))
             {
                 Logger.LogDebug(_packet, "Opening gateway launch time window.");
-                _packet.AcceptAccessRequest(attributes);
+                _packet.AcceptAccessRequest();
             }
             else
             {
