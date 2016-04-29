@@ -84,5 +84,10 @@ namespace RDSFactor
         {
             Log.Error(message);
         }
+
+        public static void LogError(string message, Exception exception)
+        {
+            Log.Error(message, exception);
+        }
     }
 }

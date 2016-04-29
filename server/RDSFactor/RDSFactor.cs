@@ -77,21 +77,28 @@ namespace RDSFactor
 
         private void ProcessPacket(RADIUSPacket packet)
         {
-            if (!packet.IsValid)
+            try
             {
-                Logger.LogError("Packet is not valid. Discarding.");
-                return;
+                if (!packet.IsValid)
+                {
+                    Logger.LogError("Packet is not valid. Discarding.");
+                    return;
+                }
+
+                var handler = new RDSHandler(packet);
+
+                // If TSGW = "1" Then
+                //   handler = New RDSHandler(packet)
+                // Else
+                //   handler = New CitrixHandler(packet)
+                // End If
+
+                handler.ProcessRequest();
             }
-
-            var handler = new RDSHandler(packet);
-
-            // If TSGW = "1" Then
-            //   handler = New RDSHandler(packet)
-            // Else
-            //   handler = New CitrixHandler(packet)
-            // End If
-
-            handler.ProcessRequest();
+            catch (Exception e)
+            {
+                Logger.LogError("Error processing packet:", e);
+            }
         }
 
 
