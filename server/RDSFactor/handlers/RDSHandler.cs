@@ -281,16 +281,21 @@ namespace RDSFactor.Handlers
             string expectedAuthToken;
 
             if (!AuthTokens.TryGetValue(_username, out expectedAuthToken) || authToken != expectedAuthToken)
-                throw new Exception("User is trying to respond to challenge without valid auth token");
+            {
+                Logger.LogError("Unexpected response to unknown challenge. The challenge token may have timed out, " +
+                                "or the incoming RADIUS packet may be bogus. Rejecting.");
+                _packet.RejectAccessRequest();
+                return;
+            }
 
-            // When the packet is an Challenge-Response the password attr. contains the encrypted result
+            // When the packet is a Challenge-Response the password attribute contains the encrypted result.
             var userEncryptedResult = _password;
 
             string localEncryptedResult;
             if (EncryptedChallengeResults.TryGetValue(_username, out localEncryptedResult)
                 && localEncryptedResult == userEncryptedResult)
             {
-                Logger.LogDebug(_packet, "ChallengeResponse Success");
+                Logger.LogDebug(_packet, "ChallengeResponse success.");
                 EncryptedChallengeResults.Remove(_username);
                 AuthTokens.Remove(_username);
                 Accept();
