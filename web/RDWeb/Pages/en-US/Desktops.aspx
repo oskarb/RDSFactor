@@ -7,6 +7,7 @@
 <% @Import Namespace="System.Security" %>
 <% @Import Namespace="Microsoft.TerminalServices.Publishing.Portal.FormAuthentication" %>
 <% @Import Namespace="Microsoft.TerminalServices.Publishing.Portal" %>
+<% @Import Namespace="System.Web.Security.AntiXss" %>
 <script runat="server">
 
     //
@@ -109,7 +110,7 @@
         }
         
         // gives us https://<hostname>[:port]/rdweb/pages/<lang>/
-        baseUrl = new Uri(new Uri(PageContentsHelper.GetBaseUri(Context), Request.FilePath), ".");
+        baseUrl = new Uri(new Uri(RequestHelper.GetOriginalRequestUri(Request), RequestHelper.GetRequestFilePath(Request)), ".");
 
         AuthenticationSection objAuthenticationSection = ConfigurationManager.GetSection("system.web/authentication") as AuthenticationSection;
         if ( objAuthenticationSection  != null )
@@ -197,7 +198,7 @@
 <RDWAPage 
     helpurl="<%=sHelpSourceServer%>" 
     domainuser="<%=SecurityElement.Escape(strDomainUserName)%>" 
-    workspacename="<%=SecurityElement.Escape(L_CompanyName_Text)%>" 
+    workspacename="<%=AntiXssEncoder.XmlAttributeEncode(L_CompanyName_Text)%>" 
     baseurl="<%=SecurityElement.Escape(baseUrl.AbsoluteUri)%>"
     >
     <RenderFailureMessage>
