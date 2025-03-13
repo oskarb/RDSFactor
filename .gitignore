@@ -2,6 +2,7 @@
 *.user
 *.TMP
 *.Cache
+.vs
 _pages_old
 obj
 web/RDWeb/Pages/Log/radius_client.txt
