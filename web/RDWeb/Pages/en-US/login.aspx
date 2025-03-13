@@ -320,7 +320,7 @@
             Session["UserPass"] = UserPass;
             Session["DomainUserName"] = DomainUserName;
             Session["Delivery"] =  Delivery;
-            strRedirectSafeUrl = "tokenform.aspx" + PageContentsHelper.AppendTenantIdToQuery(strReturnUrl);
+            strRedirectSafeUrl = "tokenform.aspx";
         }
         else if (strRedirectSafeUrl == null)
         {

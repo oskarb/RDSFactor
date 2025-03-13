@@ -125,8 +125,8 @@ public partial class SMSToken : System.Web.UI.Page
 
         if (!String.IsNullOrEmpty(strRedirectUrl))
         {
-            Uri baseUrl = PageContentsHelper.GetBaseUri(Context);
-            Uri redirectUri = new Uri(new Uri(baseUrl, Request.FilePath), strRedirectUrl + PageContentsHelper.AppendTenantIdToQuery(String.Empty));
+            Uri baseUrl = RequestHelper.GetOriginalRequestUri(Request);
+            Uri redirectUri = new Uri(new Uri(baseUrl, RequestHelper.GetRequestFilePath(Request)), strRedirectUrl);
 
             if (redirectUri.Authority.Equals(baseUrl.Authority) &&
                 redirectUri.Scheme.Equals(baseUrl.Scheme))
@@ -136,7 +136,7 @@ public partial class SMSToken : System.Web.UI.Page
         }
 
         if (strRedirectSafeUrl == null){
-            strRedirectSafeUrl = "default.aspx" + PageContentsHelper.AppendTenantIdToQuery(String.Empty);
+            strRedirectSafeUrl = "default.aspx";
         }
 
         Response.Redirect(strRedirectSafeUrl, false);
@@ -151,7 +151,7 @@ public partial class SMSToken : System.Web.UI.Page
         }
 
         // gives us https://<hostname>[:port]/rdweb/pages/<lang>/
-        baseUrl = new Uri(new Uri(PageContentsHelper.GetBaseUri(Context), Request.FilePath), ".");
+        baseUrl = new Uri(new Uri(RequestHelper.GetOriginalRequestUri(Request), RequestHelper.GetRequestFilePath(Request)), ".");
         sLocalHelp = ConfigurationManager.AppSettings["LocalHelp"];
         if ((sLocalHelp != null) && (sLocalHelp == "true")){
             sHelpSourceServer = "./rap-help.htm";
