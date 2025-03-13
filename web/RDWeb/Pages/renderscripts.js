@@ -1,4 +1,5 @@
 var helpPopup = null;
+var privacyPopup = null;
 var strTSWACookieName = "TSWAAuthClientSideCookie";
 var strTransparentGif = "../images/clear.gif";
 var g_objWorkspace = null;
@@ -21,6 +22,7 @@ var objXmlHttp = null;
 var bAsyncPageRequestSucceeded = false;
 var bIsUserActive = false;
 var strBaseUrl = "";
+var strPrivacyUrl = "";
 
 
 function clearAutoDisconnectTimer()
@@ -66,7 +68,7 @@ function onPageUnload(e)
     }
 }
 
-function onAuthenticatedPageload(e)
+function onAuthenticatedPageload()
 {
     if ( bFormAuthenticationMode == true )
     {
@@ -79,17 +81,16 @@ function onAuthenticatedPageload(e)
         // Setup onAutoDisconnect timer regardless of onAuthenticated succcess/failure to preserve old behavior
         //
         onAuthenticated();
-        iAutoDisconnectTimerId = setTimeout( "onAutoDisconnect()", iAutoDisconnectSessionTimeout );
+        iAutoDisconnectTimerId = setTimeout( onAutoDisconnect, iAutoDisconnectSessionTimeout );
         //
         // Setup onPreAutoDisconnect timer to keep web and workspace runtime in sync with user activity
         // if the workspace runtime supports OnAuthenticatedEx i.e. updating expiry timer.
         //
         if ( iPreAutoDisconnectSessionTimeout > iConstPreAutoDisconnectThreshold )
         {
-            iPreAutoDisconnectTimerId = setTimeout( "onPreAutoDisconnect()", iPreAutoDisconnectSessionTimeout );
+            iPreAutoDisconnectTimerId = setTimeout( onPreAutoDisconnect, iPreAutoDisconnectSessionTimeout );
         }
     }
-    onPageload(e);
 }
 
 function onClickHelp()
@@ -104,6 +105,18 @@ function onClickHelp()
     {
         helpPopup.close();
         helpPopup = null;
+    }
+}
+
+function onClickPrivacy() {
+    if (privacyPopup == null || privacyPopup.closed == true) {
+        privacyPopup = window.open(sPrivacyUrl,
+                                 "_blank",
+                                 "height=600px, width=600px, left=600, top=150, toolbar=no, resizable=yes, scrollbars=yes, menubar=no");
+    }
+    else {
+        privacyPopup.close();
+        privacyPopup = null;
     }
 }
 
@@ -296,6 +309,11 @@ function getCookieCrumbValue(strCookieContents, strCookieCrumbName)
     }
 
     return strCookieCrumbValue;
+}
+
+function checkCookiesEnabled()
+{
+    return -1 != document.cookie.indexOf("TSWAFeatureCheckCookie=");
 }
 
 function onAuthenticated()
@@ -543,9 +561,9 @@ function onXmlHttpRequestStateChanged()
         clearPreAutoDisconnectTimer();
         if ( iPreAutoDisconnectSessionTimeout > iConstPreAutoDisconnectThreshold )
         {
-            iPreAutoDisconnectTimerId = setTimeout( "onPreAutoDisconnect()", iPreAutoDisconnectSessionTimeout );
+            iPreAutoDisconnectTimerId = setTimeout( onPreAutoDisconnect, iPreAutoDisconnectSessionTimeout );
         }
-        iAutoDisconnectTimerId = setTimeout( "onAutoDisconnect()", iAutoDisconnectSessionTimeout );
+        iAutoDisconnectTimerId = setTimeout( onAutoDisconnect, iAutoDisconnectSessionTimeout );
 
         //
         // Set bAsyncPageRequestSucceeded and bIsUserActive flags to false.
@@ -578,7 +596,7 @@ function onPreAutoDisconnect()
         clearPreAutoDisconnectTimer();
         if ( iRemainingAutoDisconnectSessionTimeout > iConstPreAutoDisconnectThreshold )
         {
-            iPreAutoDisconnectTimerId = setTimeout( "onPreAutoDisconnect()", iRemainingAutoDisconnectSessionTimeout );
+            iPreAutoDisconnectTimerId = setTimeout( onPreAutoDisconnect, iRemainingAutoDisconnectSessionTimeout );
         }
         return;
     }

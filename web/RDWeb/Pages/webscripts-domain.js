@@ -27,7 +27,7 @@ function onLoginFormSubmit()
         strPassword = objForm.elements["UserPass"].value;
         strWorkspaceId = objForm.elements["WorkSpaceID"].value;
         strRDPCertificates = objForm.elements["RDPCertificates"].value;
-        strWorkspaceFriendlyName = objForm.elements["WorkspaceFriendlyName"].value;
+        strWorkspaceFriendlyName = decodeURIComponent(objForm.elements["WorkspaceFriendlyName"].value);
         strRedirectorName = objForm.elements["RedirectorName"].value;
 
         if( bPrivateMode )
@@ -125,6 +125,12 @@ function onLoginPageLoad(e)
     var bActiveXSSOMode = GetActiveXSSOMode(); // as a side-effect, this caches the workspace ActiveX object
 
     onPageload(e);  // call the parent event
+
+    if (!checkCookiesEnabled()) {
+        document.getElementById("tableLoginDisabled").style.display = "";
+        document.getElementById("trCookiesDisabled").style.display = "";
+        return;
+    }
 
     document.getElementById("tableLoginForm").style.display = "";
     document.getElementById("tdDomainUserNameLabel").style.display = "";

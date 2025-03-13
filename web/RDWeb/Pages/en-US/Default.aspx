@@ -1,10 +1,13 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<% @Page Language="C#" Debug="false" ResponseEncoding="utf-8" ContentType="text/xml" %>
+<% @Page Language="C#" Debug="false" ResponseEncoding="utf-8" ContentType="text/xml" Async="true"%>
 <% @Import Namespace="System.Globalization" %>
 <% @Import Namespace="System.Web.Configuration" %>
 <% @Import Namespace="System.Security" %>
+<% @Import Namespace="System.Threading.Tasks" %>
+<% @Import Namespace="System.Security.Principal" %>
 <% @Import Namespace="Microsoft.TerminalServices.Publishing.Portal.FormAuthentication" %>
 <% @Import Namespace="Microsoft.TerminalServices.Publishing.Portal" %>
+<% @Import Namespace="System.Web.Security.AntiXss" %>
 <script runat="server">
 
     //
@@ -36,17 +39,25 @@
     public string strTicketName = "";
     public string strDomainUserName = "", strUserIdentity = "";
     public string strAppFeed;
+    public string strPrivacyUrl;
 
     public WorkspaceInfo objWorkspaceInfo = null;
 
     protected void Page_PreInit(object sender, EventArgs e)
     {
-
-        string strReturnUrl = "";
-        string strReturnUrlPage = "";
-        
+        RegisterAsyncTask(new PageAsyncTask(GetAppsAsync));
+        ExecuteRegisteredAsyncTasks();
+    }
+    
+    private async Task GetAppsAsync()
+    {
+    
         // gives us https://<hostname>[:port]/rdweb/pages/<lang>/
-        baseUrl = new Uri(new Uri(PageContentsHelper.GetBaseUri(Context), Request.FilePath), ".");
+        baseUrl = new Uri(new Uri(RequestHelper.GetOriginalRequestUri(Request), RequestHelper.GetRequestFilePath(Request)), ".");
+        TraceWrite.TraceVerboseNoContext("baseUrl.AbsoluteUri: {0}", baseUrl.AbsoluteUri);
+        TraceWrite.TraceVerboseNoContext("baseUrl.AbsolutePath: {0}", baseUrl.AbsolutePath);
+
+        strPrivacyUrl = await PageContentsHelper.GetPrivacyLinkAsync();
         
         try
         {
@@ -77,32 +88,36 @@
             eAuthenticationMode = objAuthenticationSection.Mode;
         }
 
-        if ( Request.QueryString != null )
-        {
-            NameValueCollection objQueryString = Request.QueryString;
-
-            if ( objQueryString["ReturnUrl"] != null )
-            {
-                strReturnUrlPage = objQueryString["ReturnUrl"];
-                strReturnUrl = "?ReturnUrl=" + HttpUtility.UrlEncode(strReturnUrlPage);
-            }
-        }
-
         if ( eAuthenticationMode == AuthenticationMode.Forms )
         {
             if ( HttpContext.Current.User.Identity.IsAuthenticated == false || !TokenHelper.IsTwoFactorAuthSatisfied() )
             {
-                string strQueryString;
-                if (String.IsNullOrEmpty(strReturnUrl))
+                bool fQueryContainsReturnUrl = false;
+                if (Request.QueryString != null)
                 {
-                    strQueryString = "?ReturnUrl=" + Request.Path;
+                    NameValueCollection objQueryString = Request.QueryString;
+                    fQueryContainsReturnUrl = (objQueryString["ReturnUrl"] != null);
+                }
+                
+                string strQueryString;
+                if (fQueryContainsReturnUrl)
+                {
+                    strQueryString = Request.Url.Query;
                 }
                 else
                 {
-                    strQueryString = strReturnUrl;
-                }
+                    string strReturnUrlQueryParam = "ReturnUrl=" + RequestHelper.GetOriginalRequestUri(Request).AbsolutePath;
+                    if (String.IsNullOrEmpty(Request.Url.Query))
+                    {
+                        strQueryString = "?" + strReturnUrlQueryParam;
+                    }
+                    else
+                    {
+                        strQueryString = Request.Url.Query + "&" + strReturnUrlQueryParam;
+                    }
+                } 
 
-                Response.Redirect(new Uri(baseUrl, "login.aspx" + PageContentsHelper.AppendTenantIdToQuery(strQueryString)).AbsoluteUri);
+                Response.Redirect(new Uri(baseUrl, "login.aspx" + strQueryString).AbsoluteUri);
             }
 
             TSFormAuthTicketInfo objTSFormAuthTicketInfo = new TSFormAuthTicketInfo(HttpContext.Current);
@@ -140,6 +155,8 @@
         else if ( eAuthenticationMode == AuthenticationMode.Windows )
         {
             bShowPublicCheckBox = true;
+            WindowsIdentity identity = (WindowsIdentity)Context.User.Identity;
+            strUserIdentity = identity.User.ToString();
         }
 
         sRDCInstallUrl = ConfigurationManager.AppSettings["rdcInstallUrl"];
@@ -163,12 +180,15 @@
         WebFeed tswf = null;
         try
         {
-            tswf = new WebFeed(RdpType.Both, true);
-            strAppFeed = tswf.GenerateFeed(
+            tswf = new WebFeed(RdpType.Both, true);            
+            
+            Tuple<string, int> retValues = await tswf.GenerateFeedAsync(
                             strUserIdentity, 
                             FeedXmlVersion.Win8,             
                             (Request.PathInfo.Length > 0) ? Request.PathInfo : "/",
-                            false); 
+                            false);
+                            
+            strAppFeed = retValues.Item1;
         }
         catch (WorkspaceUnknownFolderException)
         {
@@ -228,8 +248,9 @@
 <RDWAPage 
     helpurl="<%=sHelpSourceServer%>" 
     domainuser="<%=SecurityElement.Escape(strDomainUserName)%>" 
-    workspacename="<%=SecurityElement.Escape(strWorkspaceName)%>" 
+    workspacename="<%=AntiXssEncoder.XmlAttributeEncode(strWorkspaceName)%>" 
     baseurl="<%=SecurityElement.Escape(baseUrl.AbsoluteUri)%>"
+    privacyurl="<%=AntiXssEncoder.XmlAttributeEncode(strPrivacyUrl)%>"
     >
     <RenderFailureMessage>
         <html xmlns="http://www.w3.org/1999/xhtml">
@@ -253,12 +274,15 @@
         iSessionTimeout = parseInt("<%=SessionTimeoutInMinutes%>");
     </HeaderJS>
     <BodyAttr 
-        onload="onAuthenticatedPageload(event)" 
+        onload="onPageload(event)" 
         onunload="onPageUnload(event)" 
         onmousedown="onUserActivity(event)" 
         onmousewheel="onUserActivity(event)" 
         onscroll="onUserActivity(event)" 
         onkeydown="onUserActivity(event)" />
+    <PostHtmlLoadJS>
+        onAuthenticatedPageload();
+    </PostHtmlLoadJS>
     <NavBar
     <% if ( eAuthenticationMode == AuthenticationMode.Forms ) {  %>
         showsignout="true"

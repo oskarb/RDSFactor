@@ -1,11 +1,13 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="../Site.xsl"?>
 <?xml-stylesheet type="text/css" href="../RenderFail.css"?>
-<% @Page Language="C#" Debug="false" ResponseEncoding="utf-8" ContentType="text/xml" %>
+<% @Page Language="C#" Debug="false" ResponseEncoding="utf-8" ContentType="text/xml" Async="true" %>
 <% @Import Namespace="System " %>
 <% @Import Namespace="System.Security" %>
+<% @Import Namespace="System.Threading.Tasks" %>
 <% @Import Namespace="Microsoft.TerminalServices.Publishing.Portal.FormAuthentication" %>
 <% @Import Namespace="Microsoft.TerminalServices.Publishing.Portal" %>
+<% @Import Namespace="System.Web.Security.AntiXss" %>
 <script language="C#" runat=server>
 
     //
@@ -48,7 +50,10 @@
     const string L_RenderFailP3_Text = "Please try loading this page without the Enhanced Security Configuration enabled. If this error continues to be displayed, please contact your administrator."; 
     const string L_GenericClaimsAuthErrorLabel_Text = "We can't sign you in right now. Please try again later.";
     const string L_WrongAxVersionWarningLabel_Text = "You don't have the right version of Remote Desktop Connection to use RD Web Access.";
+    const string L_UnsupportedBrowserWarningLabel_Text = "Your web browser isn't supported by Microsoft RemoteApp Service. Please use a supported browser.";
+    const string L_SupportedBrowserAxLoadErrorLabel_Text = "Your browser has ActiveX controls turned off. Go to your browser's settings to turn on ActiveX controls.";
     const string L_ClaimsDomainUserNameLabel_Text = "Username@domain:";
+    const string L_CookiesDisabledWarningLabel_Text = "Your browser has cookies disabled. Go to your browser's settings to enable cookies.";
 
     //
     // Page Variables
@@ -67,6 +72,7 @@
     public string strEventLogUploadAddress = "";
     public string sHelpSourceServer, sLocalHelp;
     public Uri baseUrl;
+    public string strPrivacyUrl = "";
 
     public bool bEnableSMS = false;
     public bool bEnableMail = false;
@@ -88,7 +94,7 @@
         }
 
         // gives us https://<hostname>[:port]/rdweb/pages/<lang>/
-        baseUrl = new Uri(new Uri(PageContentsHelper.GetBaseUri(Context), Request.FilePath), ".");
+        baseUrl = new Uri(new Uri(RequestHelper.GetOriginalRequestUri(Request), RequestHelper.GetRequestFilePath(Request)), ".");
 
         sLocalHelp = ConfigurationManager.AppSettings["LocalHelp"];
         if ((sLocalHelp != null) && (sLocalHelp == "true"))
@@ -113,8 +119,14 @@
         bEnableSMS = ConfigurationManager.AppSettings["EnableSMS"] == "true";
         bEnableMail = ConfigurationManager.AppSettings["EnableMail"] == "true";
     }
-
-    void Page_Load(object sender, EventArgs e)
+    
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        RegisterAsyncTask(new PageAsyncTask(LoginPageLoadAsync));
+        ExecuteRegisteredAsyncTasks();
+    }
+    
+    private async Task LoginPageLoadAsync()
     {
         if (Session["Message"] != null) {
             message = (string)Session["Message"];
@@ -148,7 +160,7 @@
             if ( objQueryString["ReturnUrl"] != null )
             {
                 strReturnUrlPage = objQueryString["ReturnUrl"];
-                strReturnUrl = "?ReturnUrl=" + HttpUtility.UrlEncode(strReturnUrlPage);
+                strReturnUrl = "?ReturnUrl=" + AntiXssEncoder.UrlEncode(strReturnUrlPage);
             }
             if ( objQueryString["Error"] != null )
             {
@@ -250,6 +262,8 @@
             }
             strRDPCertificates = PageContentsHelper.GetRdpSigningCertificateHash();
             strClaimsHint = PageContentsHelper.GetClaimsHint();
+
+            strPrivacyUrl = await PageContentsHelper.GetPrivacyLinkAsync();
         }
 
         if ( HttpContext.Current.User.Identity.IsAuthenticated == true )
@@ -285,8 +299,8 @@
 
         if (!String.IsNullOrEmpty(strRedirectUrl))
         {
-            Uri baseUrl = PageContentsHelper.GetBaseUri(Context);
-            Uri redirectUri = new Uri(new Uri(baseUrl, Request.FilePath), strRedirectUrl + PageContentsHelper.AppendTenantIdToQuery(String.Empty));
+            Uri baseUrl = RequestHelper.GetOriginalRequestUri(Request);
+            Uri redirectUri = new Uri(new Uri(baseUrl, RequestHelper.GetRequestFilePath(Request)), strRedirectUrl);
 
             if (
                 redirectUri.Authority.Equals(baseUrl.Authority) &&
@@ -310,7 +324,7 @@
         }
         else if (strRedirectSafeUrl == null)
         {
-            strRedirectSafeUrl = "default.aspx" + PageContentsHelper.AppendTenantIdToQuery(String.Empty);
+            strRedirectSafeUrl = "default.aspx";
         }
 
         Response.Redirect(strRedirectSafeUrl);       
@@ -318,8 +332,9 @@
 </script>
 <RDWAPage 
     helpurl="<%=sHelpSourceServer%>" 
-    workspacename="<%=SecurityElement.Escape(L_CompanyName_Text)%>" 
+    workspacename="<%=AntiXssEncoder.XmlAttributeEncode(L_CompanyName_Text)%>" 
     baseurl="<%=SecurityElement.Escape(baseUrl.AbsoluteUri)%>"
+    privacyurl="<%=AntiXssEncoder.XmlAttributeEncode(strPrivacyUrl)%>"
     >
   <RenderFailureMessage>
     <html xmlns="http://www.w3.org/1999/xhtml">
@@ -340,13 +355,13 @@
     onunload="onPageUnload(event)"/>
   <HTMLMainContent>
   
-      <form id="FrmLogin" name="FrmLogin" action="login.aspx<%=SecurityElement.Escape(PageContentsHelper.AppendTenantIdToQuery(strReturnUrl))%>" method="post" onsubmit="return onLoginFormSubmit()">
+      <form id="FrmLogin" name="FrmLogin" action="login.aspx<%=SecurityElement.Escape(strReturnUrl)%>" method="post" onsubmit="return onLoginFormSubmit()">
 
         <input type="hidden" name="WorkSpaceID" value="<%=SecurityElement.Escape(strWorkSpaceID)%>"/>
         <input type="hidden" name="RDPCertificates" value="<%=SecurityElement.Escape(strRDPCertificates)%>"/>
         <input type="hidden" name="PublicModeTimeout" value="<%=SecurityElement.Escape(strPublicModeTimeout)%>"/>
         <input type="hidden" name="PrivateModeTimeout" value="<%=SecurityElement.Escape(strPrivateModeTimeout)%>"/>
-        <input type="hidden" name="WorkspaceFriendlyName" value="<%=SecurityElement.Escape(L_CompanyName_Text)%>"/>
+        <input type="hidden" name="WorkspaceFriendlyName" value="<%=AntiXssEncoder.UrlEncode(L_CompanyName_Text)%>"/>
         <input type="hidden" name="EventLogUploadAddress" value="<%=SecurityElement.Escape(strEventLogUploadAddress)%>"/>
         <input type="hidden" name="RedirectorName" value="<%=SecurityElement.Escape(strRedirectorName)%>"/>
         <input type="hidden" name="ClaimsHint" value="<%=SecurityElement.Escape(strClaimsHint)%>"/>
@@ -357,15 +372,63 @@
 
 
         <table id="tableLoginDisabled" width="300" border="0" align="center" cellpadding="0" cellspacing="0" style="display:none">
-            <tr>
-                <td height="20">&#160;</td>
+
+            <tr id="trWrongAxVersion" style="display:none" >
+            <td>
+                <table>
+                <tr>
+                    <td height="20">&#160;</td>
+                </tr>
+                <tr>
+                    <td><span class="wrng"><%=L_WrongAxVersionWarningLabel_Text%></span></td>
+                </tr>
+                </table>
+            </td>
             </tr>
-            <tr>
-                <td><span class="wrng"><%=L_WrongAxVersionWarningLabel_Text%></span></td>
-            </tr>
+
+            <tr id="trUnsupportedBrowser" style="display:none" >
+            <td>
+                <table>
+                <tr>
+                    <td height="20">&#160;</td>
+                </tr>
+                <tr>
+                    <td><span class="wrng"><%=L_UnsupportedBrowserWarningLabel_Text%></span></td>
+                </tr>
+                </table>
+            </td>
+            </tr> 
+
+            <tr id="trSupportedBrowserAxLoadError" style="display:none" >
+            <td>
+                <table>
+                <tr>
+                    <td height="20">&#160;</td>
+                </tr>
+                <tr>
+                    <td><span class="wrng"><%=L_SupportedBrowserAxLoadErrorLabel_Text%></span></td>
+                </tr>
+                </table>
+            </td>
+            </tr> 
+
+            <tr id="trCookiesDisabled" style="display:none" >
+            <td>
+                <table>
+                <tr>
+                    <td height="20">&#160;</td>
+                </tr>
+                <tr>
+                    <td><span class="wrng"><%=L_CookiesDisabledWarningLabel_Text%></span></td>
+                </tr>
+                </table>
+            </td>
+            </tr> 
+
             <tr>
                 <td height="50">&#160;</td>
             </tr>
+
         </table>
 
         <table id="tableLoginForm" width="300" border="0" align="center" cellpadding="0" cellspacing="0" style="display:none">

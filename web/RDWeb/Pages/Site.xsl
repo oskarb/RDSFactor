@@ -255,6 +255,11 @@
             <td height="20"></td>
           </tr>
         </table>
+
+        <script language="javascript" type="text/javascript">
+          <xsl:value-of select="PostHtmlLoadJS[1]"/>
+        </script>
+
       </body>      
     </html>
   </xsl:template>
