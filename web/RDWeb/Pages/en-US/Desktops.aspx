@@ -193,6 +193,11 @@
         return (xArg == "true") ? "checked='checked'" : "";
     }
 
+    protected override void Render(HtmlTextWriter writer)
+    {
+        SiteXsltRenderer.RenderPage(this, writer, base.Render);
+    }
+
 </script>
 
 <RDWAPage 

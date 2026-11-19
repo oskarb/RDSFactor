@@ -329,6 +329,11 @@
 
         Response.Redirect(strRedirectSafeUrl);       
     }
+
+    protected override void Render(HtmlTextWriter writer)
+    {
+        SiteXsltRenderer.RenderPage(this, writer, base.Render);
+    }
 </script>
 <RDWAPage 
     helpurl="<%=sHelpSourceServer%>" 
