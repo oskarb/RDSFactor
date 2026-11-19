@@ -198,5 +198,10 @@ public partial class SMSToken : System.Web.UI.Page
         }
         
         onRadiusResponse(response);
-    }    
+    }
+    
+    protected override void Render(HtmlTextWriter writer)
+    {
+        SiteXsltRenderer.RenderPage(this, writer, base.Render);
+    }
 }
