@@ -163,6 +163,10 @@
 
         sLocalHelp = ConfigurationManager.AppSettings["LocalHelp"];
 
+        // Emitted below as root-relative paths. They cannot be written as plain
+        // relative hrefs like the other pages use, because folder navigation reaches
+        // this page through PathInfo (Default.aspx/Finance) and a browser would
+        // resolve "../Site.xsl" one directory too deep.
         stylesheetUrl = new Uri(baseUrl, "../Site.xsl");
         renderFailCssUrl = new Uri(baseUrl, "../RenderFail.css");
        
@@ -242,9 +246,14 @@
         Response.End();
     }
 
+    protected override void Render(HtmlTextWriter writer)
+    {
+        SiteXsltRenderer.RenderPage(this, writer, base.Render);
+    }
+
 </script>
-<%="<?xml-stylesheet type=\"text/xsl\" href=\"" + SecurityElement.Escape(stylesheetUrl.AbsoluteUri) + "\"?>"%>
-<%="<?xml-stylesheet type=\"text/css\" href=\"" + SecurityElement.Escape(renderFailCssUrl.AbsoluteUri) + "\"?>"%>
+<%="<?xml-stylesheet type=\"text/xsl\" href=\"" + SecurityElement.Escape(stylesheetUrl.AbsolutePath) + "\"?>"%>
+<%="<?xml-stylesheet type=\"text/css\" href=\"" + SecurityElement.Escape(renderFailCssUrl.AbsolutePath) + "\"?>"%>
 <RDWAPage 
     helpurl="<%=sHelpSourceServer%>" 
     domainuser="<%=SecurityElement.Escape(strDomainUserName)%>" 
